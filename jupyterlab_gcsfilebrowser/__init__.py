@@ -20,6 +20,7 @@ def load_jupyter_server_extension(nb_server_app):
     app = nb_server_app.web_app
     gcp_v1_endpoint = url_path_join(app.settings['base_url'], 'gcp', 'v1')
     app.add_handlers(host_pattern, [
-      (url_path_join(gcp_v1_endpoint, 'gcs', 'auth'), AuthHandler)
+      # TODO(cbwilkes): Add auth checking if needed.
+      # (url_path_join(gcp_v1_endpoint, 'gcs', 'auth'), AuthHandler)
       (url_path_join(gcp_v1_endpoint, 'gcs'), GCSHandler)
     ])
