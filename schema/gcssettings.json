@@ -2,8 +2,8 @@
   "$schema": "http://json-schema.org/schema#",
   "jupyter.lab.setting-icon-class": "jp-GCSFilebrowserIcon",
   "jupyter.lab.setting-icon-label": "GCS Filebrowser",
-  "title": "GCS Notebook Filebrowser",
-  "description": "GCS Notebook Filebrowser Plugin Settings Schema",
+  "title": "GCS Notebooks Filebrowser Extension",
+  "description": "GCS Notebooks Filebrowser Extension Settings Schema",
   "type": "object",
   "properties": {
     "projectId": {

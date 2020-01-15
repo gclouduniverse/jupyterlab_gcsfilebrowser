@@ -15,7 +15,7 @@
   "author": "GCP AI Platform UI Team",
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
-    "schema/gcpsettings.json",
+    "schema/*.json",
     "style/*.css",
     "style/images/*.png"
   ],
@@ -32,7 +32,7 @@
     "lint-warnings": "eslint \"src/**/*.{ts,tsx}\" --fix --quiet",
     "lint": "npm run lint-warnings -- --quiet",
     "start": "concurrently -k -p \"[{name}]\" -n \"Typescript,JupyterLab\" -c \"green.bold,yellow.bold\" \"npm run watch\" \"jupyter lab --watch\"",
-    "devserver": "nodemon -w jupyterlab_gcpscheduler -e \".py\" -x \"jupyter lab --no-browser\"",
+    "devserver": "nodemon -w jupyterlab_gcsfilebrowser -e \".py\" -x \"jupyter lab --no-browser\"",
     "test": "jest --coverage",
     "test-watch": "jest --watch",
     "watch": "tsc -w"
