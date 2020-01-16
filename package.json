@@ -17,7 +17,7 @@
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
     "schema/*.json",
     "style/*.css",
-    "style/images/*.png"
+    "style/images/*.svg"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
