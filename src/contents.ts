@@ -67,7 +67,7 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves with the file content.
     */
   get(localPath: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
-    return Promise.reject('Unimplemented');
+    return Promise.resolve(Private.placeholderDirectory);
   }
 
   /**
@@ -194,4 +194,31 @@ export class GCSDrive implements Contents.IDrive {
   deleteCheckpoint(localPath: string, checkpointID: string): Promise<void> {
     return Promise.reject('Unimplemented');
   }
+}
+
+/**
+ * Private namespace for utility functions.
+ */
+namespace Private {
+
+  /**
+   * Placeholder directory to present when there is not anything to show like
+   * after an error.
+   */
+  export const placeholderDirectory: Contents.IModel = {
+    type: 'directory',
+    path: 'abc',
+    name: 'abc',
+    format: 'json',
+    content: [{
+      'name': 'dummy' + '/',
+      'path': 'dummy' + '/',
+      'type': 'directory'
+    }],
+    created: '',
+    writable: false,
+    last_modified: '',
+    mimetype: ''
+  };
+
 }

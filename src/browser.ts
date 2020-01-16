@@ -3,6 +3,7 @@ import {FileBrowser} from '@jupyterlab/filebrowser';
 import {PanelLayout, Widget} from '@phosphor/widgets';
 
 import {GCSDrive} from './contents';
+
 /**
  * Widget for hosting the GitHub filebrowser.
  */
