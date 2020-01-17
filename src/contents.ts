@@ -2,6 +2,7 @@
 import {DocumentRegistry} from '@jupyterlab/docregistry';
 import {ISignal, Signal} from '@phosphor/signaling';
 import {Contents, ServerConnection} from '@jupyterlab/services';
+import {URLExt} from "@jupyterlab/coreutils";
 
 /**
  * A Contents.IDrive implementation that Google Cloud Storage.
@@ -67,7 +68,51 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves with the file content.
     */
   get(localPath: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
-    return Promise.resolve(Private.placeholderDirectory);
+    return new Promise((resolve, reject) => {
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs', localPath);
+      ServerConnection.makeRequest(requestUrl, {}, serverSettings
+      ).then((response) => {
+
+        response.json().then((content) => {
+
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return [Private.placeholderDirectory];
+          }
+
+          let directory_contents = content.map((c: any) => {
+            return {
+              name: c.name,
+              path: c.path,
+              format: "json",
+              type: c.type,
+              created: "",
+              writable: false,
+              last_modified: "",
+              mimetype: c.mimetype,
+              content: c.content
+            };
+          })
+
+          let directory: Contents.IModel = {
+            type: "directory",
+            path: localPath.trim(),
+            name: "",
+            format: "json",
+            content: directory_contents,
+            created: "",
+            writable: false,
+            last_modified: "",
+            mimetype: ""
+          }
+
+          resolve(directory);
+        });
+      });
+    });
   }
 
   /**
