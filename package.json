@@ -26,7 +26,7 @@
     "url": "https://github.com/gclouduniverse/jupyterlab_gcsfilebrowser-plugin.git"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.prod.json",
+    "build": "tsc -p tsconfig.prod.json --allowJs --checkJs",
     "clean": "rimraf lib",
     "prepare": "npm run clean && npm run build",
     "lint-warnings": "eslint \"src/**/*.{ts,tsx}\" --fix --quiet",
@@ -49,6 +49,7 @@
     "@material-ui/icons": "^3.0.2",
     "@phosphor/disposable": "^1.2.0",
     "@phosphor/widgets": "^1.8.1",
+    "@types/base64-js": "^1.2.5",
     "csstips": "^1.1.0",
     "formik": "^1.5.8",
     "typestyle": "^2.0.4",
@@ -67,11 +68,11 @@
     "@types/gapi.client.ml": "^1.0.1",
     "@types/gapi.client.servicemanagement": "^1.0.1",
     "@types/gapi.client.storage": "^1.0.1",
-    "@types/jest": "^24.0.16",
+    "@types/jest": "^24.9.1",
     "@types/react": "~16.4.18",
-    "@types/react-dom": "^16.8.5",
-    "@typescript-eslint/eslint-plugin": "^2.1.0",
-    "@typescript-eslint/parser": "^2.1.0",
+    "@types/react-dom": "^16.9.5",
+    "@typescript-eslint/eslint-plugin": "^2.17.0",
+    "@typescript-eslint/parser": "^2.17.0",
     "concurrently": "^4.1.1",
     "enzyme": "^3.10.0",
     "enzyme-adapter-react-16": "^1.14.0",
@@ -86,7 +87,7 @@
     "rimraf": "^2.6.1",
     "simulate-event": "^1.4.0",
     "ts-jest": "^24.0.2",
-    "typescript": "^3.5.3"
+    "typescript": "^3.7.5"
   },
   "peerDependencies": {
     "react": "~16.4.2",

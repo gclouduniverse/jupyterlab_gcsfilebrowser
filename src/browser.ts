@@ -10,7 +10,7 @@ import {GCSDrive} from './contents';
 export class GCSFileBrowser extends Widget {
   constructor(browser: FileBrowser, drive: GCSDrive) {
     super();
-    this.addClass('jp-GitHubBrowser');
+    this.addClass('jp-GCSFilebrowser');
     this.layout = new PanelLayout();
     (this.layout as PanelLayout).addWidget(browser);
   }

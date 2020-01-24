@@ -2,3 +2,13 @@
   background-image: url('./images/storage_24px.svg');
   background-size: contain;
 }
+
+.jp-GCSFilebrowser .jp-FileBrowser {
+  flex-grow: 1;
+  height: 100%;
+}
+
+#gcs-filebrowser-widget {
+  flex-grow: 1;
+  height: 100%;
+}

@@ -20,7 +20,6 @@ async function activateGCSFileBrowser(
   factory: IFileBrowserFactory,
   restorer: ILayoutRestorer
 ) {
-
   const drive = new GCSDrive(app.docRegistry);
   manager.services.contents.addDrive(drive);
 
@@ -33,13 +32,12 @@ async function activateGCSFileBrowser(
 
   GCSBrowser.title.iconClass = 'jp-GCSFilebrowserIcon jp-SideBar-tabIcon';
   GCSBrowser.title.caption = 'Browse GCS';
-  GCSBrowser.id = 'gcs-filebrowser';
-
+  GCSBrowser.id = 'gcs-filebrowser-widget';
 
   restorer.add(GCSBrowser, NAMESPACE);
   app.shell.add(GCSBrowser, 'left', {rank: 100});
-
 }
+
 /**
  * The JupyterLab plugin for the GCS Filebrowser.
  */
