@@ -17,8 +17,12 @@ def list_dir(bucket_name, path, blobs_dir_list):
   items = []
   directories = set()
 
+  path = '%s%s' % (path, '' if re.match(".*/$", path) else '/')
+
+  # print('list_dir', (bucket_name, path, blobs_dir_list))
+
   for blob in blobs_dir_list:
-    relative_blob_name = re.sub(r'^' + path + '/', '', blob.name)
+    relative_blob_name = re.sub(r'^' + path, '', blob.name)
 
     relative_path_parts = [
       dir
@@ -46,9 +50,14 @@ def list_dir(bucket_name, path, blobs_dir_list):
                   'name': dir_name
                 })
 
+  # print('list_dir', (bucket_name, path))
+
+  if path != '/':
+    path = '/' + path
+
   items = items + [{
                   'type': 'directory',
-                  'path': ('%s/%s/%s/' % (bucket_name, path, d)),
+                  'path': ('%s%s%s/' % (bucket_name, path, d)),
                   'name': d + '/'
                   } for d in directories]
 
@@ -56,6 +65,8 @@ def list_dir(bucket_name, path, blobs_dir_list):
 
 def getPathContents(path, storage_client):
   path = path or '/'
+  addDir = '/' if re.match(".+/$", path) else ''
+  path = os.path.normpath(path) + addDir
 
   if path == '/':
     buckets = storage_client.list_buckets()
@@ -126,3 +137,11 @@ class GCSHandler(APIHandler):
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+
+
+class UploadHandler(APIHandler):
+
+  @gen.coroutine
+  def post(self):
+    pass
+
