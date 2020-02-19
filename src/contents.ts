@@ -72,7 +72,7 @@ export class GCSDrive implements Contents.IDrive {
       // TODO(cbwilkes): Move to a services library.
       let serverSettings = ServerConnection.makeSettings();
       const requestUrl = URLExt.join(
-        serverSettings.baseUrl, 'gcp/v1/gcs', localPath);
+        serverSettings.baseUrl, 'gcp/v1/gcs/files', localPath);
       ServerConnection.makeRequest(requestUrl, {}, serverSettings
       ).then((response) => {
         response.json().then((content) => {

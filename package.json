@@ -33,7 +33,7 @@
     "lint": "npm run lint-warnings -- --quiet",
     "start": "concurrently -k -p \"[{name}]\" -n \"Typescript,JupyterLab\" -c \"green.bold,yellow.bold\" \"npm run watch\" \"jupyter lab --watch\"",
     "devserver": "nodemon -w jupyterlab_gcsfilebrowser -e \".py\" -x \"jupyter lab --no-browser\"",
-    "test": "jest --coverage --passWithNoTests",
+    "test": "jest --coverage --passWithNoTests && python tests.py",
     "test-watch": "jest --watch",
     "watch": "tsc -w"
   },
@@ -43,6 +43,7 @@
     "@jupyterlab/coreutils": "^3.0.0",
     "@jupyterlab/docregistry": "^1.0.2",
     "@jupyterlab/filebrowser": "^1.0.3",
+    "@jupyterlab/launcher": "^1.0.3",
     "@jupyterlab/mainmenu": "^1.0.2",
     "@jupyterlab/notebook": "^1.0.2",
     "@material-ui/core": "^3.9.3",
