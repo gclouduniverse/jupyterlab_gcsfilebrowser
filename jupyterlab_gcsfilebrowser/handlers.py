@@ -11,7 +11,7 @@ from collections import namedtuple
 from notebook.base.handlers import APIHandler, app_log
 
 from google.cloud import storage # used for connecting to GCS
-from io import BytesIO # used for sending GCS blobs in JSON objects
+from io import BytesIO, StringIO # used for sending GCS blobs in JSON objects
 
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
@@ -142,6 +142,56 @@ class GCSHandler(APIHandler):
 class UploadHandler(APIHandler):
 
   @gen.coroutine
-  def post(self):
-    pass
+  def post(self, *args, **kwargs):
+    model = self.get_json_body()
+
+    # Remove any preceeding '/', and split off the bucket name
+    bucket_paths = re.sub(r'^/', '', model['path']).split('/', 1)
+
+    # The first token should represent the bucket name
+    bucket_name = bucket_paths[0]
+
+    # The rest of the string should represent the blob path, if requested
+    blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
+
+    if 'chunk' not in model:
+      storage_client = storage.Client()
+      bucket = storage_client.get_bucket(bucket_name)
+      blob = bucket.blob(blob_path)
+      if model['format'] == 'base64':
+        bytes_file = BytesIO(base64.b64decode(model['content']))
+        blob.upload_from_file(bytes_file)
+      else:
+        blob.upload_from_string(model['content'])
+    else:
+      tmp_dir = '/tmp/gcsfilebrowser/'
+
+      tmp_blob_path = tmp_dir + model['path']
+
+      # Create parent directory if doesn't exist
+      directory = os.path.dirname(tmp_blob_path)
+      if not os.path.exists(directory):
+        os.makedirs(directory)
+
+      # Append chunk to the temp file
+      with open(tmp_blob_path, "a+b") as tmp_file:
+        print("Saving chunk number %s to %s" % (model['chunk'], tmp_blob_path))
+        tmp_file.write(base64.b64decode(model['content']))
+
+      # Upload the file to GCS after the last chunk
+      if model['chunk'] == -1:
+        tmp_file.close()
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket(bucket_name)
+        blob = bucket.blob(blob_path)
+        blob.upload_from_filename(tmp_blob_path)
+
+        os.remove(tmp_blob_path)
+
+        print("File %s uploaded and removed!" % tmp_blob_path)
+
+
+
+
+
 

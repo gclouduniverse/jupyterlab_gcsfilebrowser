@@ -89,7 +89,7 @@ export class GCSDrive implements Contents.IDrive {
                 format: "json",
                 type: c.type,
                 created: "",
-                writable: false,
+                writable: true,
                 last_modified: "",
                 mimetype: c.mimetype,
                 content: c.content
@@ -102,7 +102,7 @@ export class GCSDrive implements Contents.IDrive {
               format: "json",
               content: directory_contents,
               created: "",
-              writable: false,
+              writable: true,
               last_modified: "",
               mimetype: ""
             }
@@ -120,7 +120,7 @@ export class GCSDrive implements Contents.IDrive {
               format: "text",
               content: decoded_content,
               created: "",
-              writable: false,
+              writable: true,
               last_modified: "",
               mimetype: content.content.mimetype
             });
@@ -188,7 +188,31 @@ export class GCSDrive implements Contents.IDrive {
     *   file is saved.
     */
   save(localPath: string, options?: Partial<Contents.IModel>): Promise<Contents.IModel> {
-    return Promise.reject('Unimplemented');
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/upload', localPath);
+      const requestInit: RequestInit = {
+        body: JSON.stringify(options),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        resolve({
+          type: options.type,
+          path: options.path,
+          name: options.name,
+          format: options.format,
+          content: options.content,
+          created: options.type,
+          writable: options.writable,
+          last_modified: options.last_modified,
+          mimetype: options.mimetype
+        });
+      });
+    });
+
   }
 
   /**
@@ -214,7 +238,8 @@ export class GCSDrive implements Contents.IDrive {
     *   checkpoint is created.
     */
   createCheckpoint(localPath: string): Promise<Contents.ICheckpointModel> {
-    return Promise.reject('Unimplemented');
+    // TODO(cbwilkes): Replace dummy create checkpoint.
+    return Promise.resolve({id: '1234', last_modified: 'today'});
   }
 
   /**
@@ -226,7 +251,8 @@ export class GCSDrive implements Contents.IDrive {
     *    the file.
     */
   listCheckpoints(localPath: string): Promise<Contents.ICheckpointModel[]> {
-    return Promise.reject('Unimplemented');
+    // TODO(cbwilkes): Replace dummy list checkpoint.
+    return Promise.resolve([]);
   }
 
   /**
