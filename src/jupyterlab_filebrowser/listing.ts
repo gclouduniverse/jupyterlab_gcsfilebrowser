@@ -50,57 +50,57 @@ import {GCSFileBrowserModel} from './model';
 /**
  * The class name added to DirListing widget.
  */
-const DIR_LISTING_CLASS = 'jp-DirListing';
+const DIR_LISTING_CLASS = 'jp-gcs-DirListing';
 
 /**
  * The class name added to a dir listing header node.
  */
-const HEADER_CLASS = 'jp-DirListing-header';
+const HEADER_CLASS = 'jp-gcs-DirListing-header';
 
 /**
  * The class name added to a dir listing list header cell.
  */
-const HEADER_ITEM_CLASS = 'jp-DirListing-headerItem';
+const HEADER_ITEM_CLASS = 'jp-gcs-DirListing-headerItem';
 
 /**
  * The class name added to a header cell text node.
  */
-const HEADER_ITEM_TEXT_CLASS = 'jp-DirListing-headerItemText';
+const HEADER_ITEM_TEXT_CLASS = 'jp-gcs-DirListing-headerItemText';
 
 /**
  * The class name added to a header cell icon node.
  */
-const HEADER_ITEM_ICON_CLASS = 'jp-DirListing-headerItemIcon';
+const HEADER_ITEM_ICON_CLASS = 'jp-gcs-DirListing-headerItemIcon';
 
 /**
  * The class name added to the dir listing content node.
  */
-const CONTENT_CLASS = 'jp-DirListing-content';
+const CONTENT_CLASS = 'jp-gcs-DirListing-content';
 
 /**
  * The class name added to dir listing content item.
  */
-const ITEM_CLASS = 'jp-DirListing-item';
+const ITEM_CLASS = 'jp-gcs-DirListing-item';
 
 /**
  * The class name added to the listing item text cell.
  */
-const ITEM_TEXT_CLASS = 'jp-DirListing-itemText';
+const ITEM_TEXT_CLASS = 'jp-gcs-DirListing-itemText';
 
 /**
  * The class name added to the listing item icon cell.
  */
-const ITEM_ICON_CLASS = 'jp-DirListing-itemIcon';
+const ITEM_ICON_CLASS = 'jp-gcs-DirListing-itemIcon';
 
 /**
  * The class name added to the listing item modified cell.
  */
-const ITEM_MODIFIED_CLASS = 'jp-DirListing-itemModified';
+const ITEM_MODIFIED_CLASS = 'jp-gcs-DirListing-itemModified';
 
 /**
  * The class name added to the dir listing editor node.
  */
-const EDITOR_CLASS = 'jp-DirListing-editor';
+const EDITOR_CLASS = 'jp-gcs-DirListing-editor';
 
 /**
  * The class name added to the name column header cell.
@@ -802,7 +802,7 @@ export class DirListing extends Widget {
   onResize(msg: Widget.ResizeMessage) {
     const {width} =
       msg.width === -1 ? this.node.getBoundingClientRect() : msg;
-    this.toggleClass('jp-DirListing-narrow', width < 250);
+    this.toggleClass('jp-gcs-DirListing-narrow', width < 250);
   }
 
   /**

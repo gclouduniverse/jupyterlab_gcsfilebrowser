@@ -8,11 +8,12 @@ import {
 } from '@jupyterlab/application';
 
 import {IDocumentManager} from '@jupyterlab/docmanager';
-import {IGCSFileBrowserFactory} from './tokens';
-import {DirListing} from './listing';
+import {IGCSFileBrowserFactory} from './jupyterlab_filebrowser/tokens';
+import {DirListing} from './jupyterlab_filebrowser/listing';
 import {GCSDrive} from './contents';
 
 import {
+  Clipboard,
   MainAreaWidget,
   ToolbarButton,
   WidgetTracker,
@@ -26,8 +27,8 @@ import {CommandRegistry} from '@phosphor/commands';
 
 import {Launcher} from '@jupyterlab/launcher';
 
-import {GCSFileBrowser} from './browser';
-import {GCSFileBrowserModel} from './model';
+import {GCSFileBrowser} from './jupyterlab_filebrowser/browser';
+import {GCSFileBrowserModel} from './jupyterlab_filebrowser/model';
 
 import {IIconRegistry} from '@jupyterlab/ui-components';
 
@@ -67,6 +68,83 @@ async function activateGCSFileBrowser(
 
   restorer.add(browser, NAMESPACE);
   app.shell.add(browser, 'left', {rank: 100});
+
+
+  addCommands(app, factory);
+
+
+}
+
+
+
+/**
+ * The command IDs used by the file browser plugin.
+ */
+namespace CommandIDs {
+  export const copyGCSURI = 'gcsfilebrowser:copy-gcs-uri';
+  export const del = 'gcsfilebrowser:delete';
+}
+
+
+function addCommands(
+  app: JupyterFrontEnd,
+  factory: IGCSFileBrowserFactory
+) {
+
+  const {commands} = app;
+  const {tracker} = factory;
+
+  commands.addCommand(CommandIDs.del, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.delete();
+      }
+    },
+    iconClass: 'jp-CloseIcon',
+    label: 'Delete',
+    mnemonic: 0
+  });
+
+  commands.addCommand(CommandIDs.copyGCSURI, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+      if (!widget) {
+        return;
+      }
+
+      return widget.model.manager.services.contents
+        .getDownloadUrl(widget.selectedItems().next()!.path)
+        .then(url => {
+          Clipboard.copyToSystem(url);
+        });
+    },
+    iconClass: 'jp-CopyIcon',
+    label: 'Copy GCS URI (gs://)',
+    mnemonic: 0
+  });
+
+
+
+  // matches anywhere on filebrowser
+  // const selectorContent = '.jp-gcs-DirListing-content';
+  // matches all filebrowser items
+  // const selectorItem = '.jp-gcs-DirListing-item[data-isdir]';
+  // matches only non-directory items
+  const selectorNotDir = '.jp-gcs-DirListing-item[data-isdir="false"]';
+
+  app.contextMenu.addItem({
+    command: CommandIDs.copyGCSURI,
+    selector: selectorNotDir,
+    rank: 1
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.del,
+    selector: selectorNotDir,
+    rank: 2
+  });
+
 }
 
 /**
@@ -171,4 +249,4 @@ namespace Private {
  * Export the plugin as default.
  */
 export default [factory, GCSFileBrowserPlugin];
-export * from './tokens';
+export * from './jupyterlab_filebrowser/tokens';

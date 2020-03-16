@@ -63,6 +63,7 @@ def list_dir(bucket_name, path, blobs_dir_list):
 
   return items
 
+
 def getPathContents(path, storage_client):
   path = path or '/'
   addDir = '/' if re.match(".+/$", path) else ''
@@ -121,6 +122,43 @@ def getPathContents(path, storage_client):
         }
 
 
+def delete(path, storage_client):
+  path = path or '/'
+  addDir = '/' if re.match(".+/$", path) else ''
+  path = os.path.normpath(path) + addDir
+
+  if path == '/':
+    return {}
+  else:
+    # Remove any preceeding '/', and split off the bucket name
+    bucket_paths = re.sub(r'^/', '', path).split('/', 1)
+
+    # The first token should represent the bucket name
+    bucket_name = bucket_paths[0]
+
+    # The rest of the string should represent the blob path, if requested
+    blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
+
+    # List blobs in the bucket with the blob_path prefix
+    blobs = list(storage_client.list_blobs(
+      bucket_name, prefix=blob_path))
+
+    # Find a blob that is not a directory name and fully matches the blob_path
+    # If there are any matches, we are retriving a single blob
+    matching_blobs = [b
+          for b in blobs
+          # TODO(cbwilkes): protect against empty names
+          if not re.match(".*/$", b.name) and b.name == blob_path]
+
+    if len(matching_blobs) == 1: # Single blob
+      blob = matching_blobs[0]
+      blob.delete()
+
+      return {}
+    else: # Directory
+      return {}
+
+
 class GCSHandler(APIHandler):
   """Handles requests for GCS operations."""
   storage_client = None
@@ -161,6 +199,8 @@ class UploadHandler(APIHandler):
       if model['format'] == 'base64':
         bytes_file = BytesIO(base64.b64decode(model['content']))
         blob.upload_from_file(bytes_file)
+      elif model['format'] == 'json':
+        blob.upload_from_string(json.dumps(model['content']))
       else:
         blob.upload_from_string(model['content'])
     else:
@@ -190,8 +230,23 @@ class UploadHandler(APIHandler):
 
         print("File %s uploaded and removed!" % tmp_blob_path)
 
+    self.finish({})
 
 
+class DeleteHandler(APIHandler):
 
+  storage_client = None
 
+  @gen.coroutine
+  def delete(self, path=''):
+
+    try:
+      if not self.storage_client:
+        self.storage_client = storage.Client()
+
+      self.finish(json.dumps(delete(path, self.storage_client)))
+
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
 

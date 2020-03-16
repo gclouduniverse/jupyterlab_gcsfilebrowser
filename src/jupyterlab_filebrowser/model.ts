@@ -33,7 +33,7 @@ import {IDisposable} from '@phosphor/disposable';
 
 import {ISignal, Signal} from '@phosphor/signaling';
 
-import {GCSDrive} from './contents';
+import {GCSDrive} from '../contents';
 
 /**
  * The default duration of the auto-refresh in ms
@@ -541,6 +541,7 @@ export class GCSFileBrowserModel implements IDisposable {
       return await this.manager.services.contents.save(path, model);
     };
 
+    debugger;
     if (!chunked) {
       try {
         return await uploadInner(file);

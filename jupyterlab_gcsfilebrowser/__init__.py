@@ -1,6 +1,6 @@
 from notebook.utils import url_path_join
 
-from jupyterlab_gcsfilebrowser.handlers import GCSHandler, UploadHandler
+from jupyterlab_gcsfilebrowser.handlers import DeleteHandler, GCSHandler, UploadHandler
 from jupyterlab_gcsfilebrowser.version import VERSION
 
 __version__ = VERSION
@@ -25,5 +25,6 @@ def load_jupyter_server_extension(nb_server_app):
       # (url_path_join(gcp_v1_endpoint, auth'), AuthHandler)
       (url_path_join(gcp_v1_endpoint, 'files') + '(.*)', GCSHandler),
       (url_path_join(gcp_v1_endpoint, 'upload', ) + '(.*)', UploadHandler),
+      (url_path_join(gcp_v1_endpoint, 'delete', ) + '(.*)', DeleteHandler),
     ])
 

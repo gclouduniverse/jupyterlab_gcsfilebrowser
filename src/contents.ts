@@ -137,7 +137,7 @@ export class GCSDrive implements Contents.IDrive {
     *   file path on the server.
     */
   getDownloadUrl(localPath: string): Promise<string> {
-    return Promise.reject('Unimplemented');
+    return Promise.resolve('gs://' + localPath);
   }
 
   /**
@@ -160,6 +160,20 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves when the file is deleted.
     */
   delete(localPath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/delete', localPath);
+      const requestInit: RequestInit = {
+        method: "DELETE",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {})
+      resolve(void 0);
+    });
+
+
     return Promise.reject('Unimplemented');
   }
 
@@ -199,21 +213,29 @@ export class GCSDrive implements Contents.IDrive {
       };
       ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
       ).then((response) => {
-        resolve({
+        const data = {
           type: options.type,
           path: options.path,
-          name: options.name,
+          name: "",
           format: options.format,
           content: options.content,
-          created: options.type,
-          writable: options.writable,
+          created: options.created,
+          writable: true,
           last_modified: options.last_modified,
           mimetype: options.mimetype
+        };
+        this._fileChanged.emit({
+          type: 'save',
+          newValue: null,
+          oldValue: data,
         });
+        resolve(data);
       });
     });
 
   }
+
+
 
   /**
     * Copy a file into a given directory.
@@ -239,8 +261,18 @@ export class GCSDrive implements Contents.IDrive {
     */
   createCheckpoint(localPath: string): Promise<Contents.ICheckpointModel> {
     // TODO(cbwilkes): Replace dummy create checkpoint.
-    return Promise.resolve({id: '1234', last_modified: 'today'});
+    if (this.checkPoints.has(localPath) === false) {
+      this.checkPoints.set(localPath, new Map<string, Contents.ICheckpointModel>());
+    }
+    const checkPoint = {
+      id: this.checkPoints.get(localPath).size.toString(),
+      last_modified: new Date().toString()
+    }
+    this.checkPoints.get(localPath).set(checkPoint.id, checkPoint);
+    return Promise.resolve(checkPoint);
   }
+
+  private checkPoints: Map<string, Map<string, Contents.ICheckpointModel>> = new Map<string, Map<string, Contents.ICheckpointModel>>();
 
   /**
     * List available checkpoints for a file.
@@ -252,7 +284,10 @@ export class GCSDrive implements Contents.IDrive {
     */
   listCheckpoints(localPath: string): Promise<Contents.ICheckpointModel[]> {
     // TODO(cbwilkes): Replace dummy list checkpoint.
-    return Promise.resolve([]);
+    if (this.checkPoints.has(localPath) === false) {
+      this.checkPoints.set(localPath, new Map<string, Contents.ICheckpointModel>());
+    }
+    return Promise.resolve(Array.from(this.checkPoints.get(localPath).values()));
   }
 
   /**
@@ -265,7 +300,7 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves when the checkpoint is restored.
     */
   restoreCheckpoint(localPath: string, checkpointID: string): Promise<void> {
-    return Promise.reject('Unimplemented');
+    return Promise.resolve();
   }
 
   /**
@@ -278,7 +313,8 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves when the checkpoint is deleted.
     */
   deleteCheckpoint(localPath: string, checkpointID: string): Promise<void> {
-    return Promise.reject('Unimplemented');
+    //this.checkPoints.get(localPath).delete(checkpointID);
+    return Promise.resolve();
   }
 }
 
