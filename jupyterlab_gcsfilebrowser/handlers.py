@@ -181,6 +181,8 @@ class UploadHandler(APIHandler):
 
   @gen.coroutine
   def post(self, *args, **kwargs):
+    storage_client = storage.Client()
+
     model = self.get_json_body()
 
     # Remove any preceeding '/', and split off the bucket name
@@ -192,8 +194,7 @@ class UploadHandler(APIHandler):
     # The rest of the string should represent the blob path, if requested
     blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
 
-    if 'chunk' not in model:
-      storage_client = storage.Client()
+    def uploadModel(storage_client, model, blob_path):
       bucket = storage_client.get_bucket(bucket_name)
       blob = bucket.blob(blob_path)
       if model['format'] == 'base64':
@@ -203,32 +204,45 @@ class UploadHandler(APIHandler):
         blob.upload_from_string(json.dumps(model['content']))
       else:
         blob.upload_from_string(model['content'])
+
+    def appendChunk(storage_client, model, last, temp, composite, deleteLast=False):
+      bucket = storage_client.get_bucket(bucket_name)
+      print("Saving chunk number %s to %s" % (model['chunk'], blob_path))
+      uploadModel(storage_client, model, temp)
+
+      blob = bucket.blob(composite)
+
+      blob_last = bucket.blob(last)
+      blob_temp = bucket.blob(temp)
+
+      blob.compose([blob_last, blob_temp])
+
+      blob_temp.delete()
+
+      if deleteLast:
+        blob_last.delete()
+
+    if 'chunk' not in model:
+      uploadModel(storage_client, model, blob_path)
     else:
-      tmp_dir = '/tmp/gcsfilebrowser/'
-
-      tmp_blob_path = tmp_dir + model['path']
-
-      # Create parent directory if doesn't exist
-      directory = os.path.dirname(tmp_blob_path)
-      if not os.path.exists(directory):
-        os.makedirs(directory)
-
-      # Append chunk to the temp file
-      with open(tmp_blob_path, "a+b") as tmp_file:
-        print("Saving chunk number %s to %s" % (model['chunk'], tmp_blob_path))
-        tmp_file.write(base64.b64decode(model['content']))
-
-      # Upload the file to GCS after the last chunk
-      if model['chunk'] == -1:
-        tmp_file.close()
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket(bucket_name)
-        blob = bucket.blob(blob_path)
-        blob.upload_from_filename(tmp_blob_path)
-
-        os.remove(tmp_blob_path)
-
-        print("File %s uploaded and removed!" % tmp_blob_path)
+      if model['chunk'] == 1:
+        blob_path_composite = '%s.temporary' % (blob_path)
+        uploadModel(storage_client, model, blob_path_composite)
+      elif model['chunk'] == -1:
+        appendChunk(
+          storage_client,
+          model,
+          '%s.temporary' % (blob_path),
+          '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
+          blob_path,
+          True)
+      else:
+        appendChunk(
+          storage_client,
+          model,
+          '%s.temporary' % (blob_path),
+          '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
+          '%s.temporary' % (blob_path))
 
     self.finish({})
 
