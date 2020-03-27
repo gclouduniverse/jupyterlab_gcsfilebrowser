@@ -3,6 +3,8 @@
 `jupyterlab_gcsfilebrowser` - Provides a mechanism browse and interact with
 Google Cloud Storage through a file browser.
 
+![Demo](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser_demo.gif)
+
 ## Prerequisites
 
 * Python 3.5+
@@ -11,22 +13,38 @@ Google Cloud Storage through a file browser.
 
 ## Installation
 
-This should work on Google Cloud Deep Learning VM M19+. You may also use the
-[deploy.sh](./deploy.sh) script to build the extension locally, then copy and
-install on a DLVM over SSH.
+This should work on Google Cloud Deep Learning VM M19+.
+
+### Install on Google Cloud Deep Learning VM from public release
+
+Use the [deploy-latest.sh](./deploy-latest.sh) upload and install from the latest [public release tarball](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser-latest.tar.gz) on a DLVM over SSH using the instance name.
+
+```bash
+./deploy-latest.sh ${INSTANCE_NAME?}
+```
+
+### Install Google Cloud Deep Learning VM from local
+
+Use the [deploy.sh](./deploy.sh) script to build the extension locally, upload, and
+install on a DLVM over SSH using the instance name.
+
+```bash
+./deploy.sh ${INSTANCE_NAME?}
+```
+### Manually install from local
 
 ```bash
 # Build the Python source distribution package
-python setup.py sdist
+local$ python setup.py sdist
 
 # Copy the dist/jupyterlab_gcsfilebrowser-x.x.x.tar.gz archive to the JupyterLab
-# server and untar it
+# server
 
 # Install the Python package
-sudo pip3 install .
+server$ sudo pip3 install jupyterlab_gcsfilebrowser-x.x.x.tar.gz
 # Force Jupyter to rebuild the front-end packages
-sudo jupyter lab build
-sudo service jupyter restart
+server$ sudo jupyter lab build
+server$ sudo service jupyter restart
 ```
 
 ## Development
