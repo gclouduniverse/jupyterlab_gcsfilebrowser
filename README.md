@@ -17,7 +17,7 @@ This should work on Google Cloud Deep Learning VM M19+.
 
 ### Install on Google Cloud Deep Learning VM from public release
 
-Use the [deploy-latest.sh](./deploy-latest.sh) script to upload and install from the latest publicly released [tarball](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser-latest.tar.gz) on a DLVM over SSH using the instance name.
+Use the [deploy-latest.sh](./deploy-latest.sh) script to upload and install from the latest publicly released [tarball](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser-latest.tar.gz) on a DLVM over SSH using the instance name.  Requires gcloud from the Google Cloud SDK to be [installed](https://cloud.google.com/sdk/install).
 
 ```bash
 ./deploy-latest.sh ${INSTANCE_NAME?}
@@ -26,7 +26,7 @@ Use the [deploy-latest.sh](./deploy-latest.sh) script to upload and install from
 ### Install Google Cloud Deep Learning VM from local
 
 Use the [deploy.sh](./deploy.sh) script to build the extension locally, upload, and
-install on a DLVM over SSH using the instance name.
+install on a DLVM over SSH using the instance name. Requires gcloud from the Google Cloud SDK to be [installed](https://cloud.google.com/sdk/install).
 
 ```bash
 ./deploy.sh ${INSTANCE_NAME?}
