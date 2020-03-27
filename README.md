@@ -17,7 +17,7 @@ This should work on Google Cloud Deep Learning VM M19+.
 
 ### Install on Google Cloud Deep Learning VM from public release
 
-Use the [deploy-latest.sh](./deploy-latest.sh) upload and install from the latest [public release tarball](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser-latest.tar.gz) on a DLVM over SSH using the instance name.
+Use the [deploy-latest.sh](./deploy-latest.sh) script to upload and install from the latest publicly released [tarball](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser-latest.tar.gz) on a DLVM over SSH using the instance name.
 
 ```bash
 ./deploy-latest.sh ${INSTANCE_NAME?}
