@@ -15,6 +15,12 @@ Google Cloud Storage through a file browser.
 
 This should work on Google Cloud Deep Learning VM M19+.
 
+### Credentials
+
+This extension requires credentials to exist on the JupyterLab server.
+
+If credentials do not exist on the server, follow the Google Cloud [Getting Started with Authentication](https://cloud.google.com/docs/authentication/getting-started) instructions.
+
 ### Install on Google Cloud Deep Learning VM from public release
 
 Use the [deploy-latest.sh](./deploy-latest.sh) script to upload and install from the latest publicly released [tarball](https://storage.googleapis.com/deeplearning-platform-ui-public/jupyterlab_gcsfilebrowser-latest.tar.gz) on a DLVM over SSH using the instance name.  Requires gcloud from the Google Cloud SDK to be [installed](https://cloud.google.com/sdk/install).
