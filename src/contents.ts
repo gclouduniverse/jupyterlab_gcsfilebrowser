@@ -98,7 +98,7 @@ export class GCSDrive implements Contents.IDrive {
             let directory: Contents.IModel = {
               type: "directory",
               path: localPath.trim(),
-              name: "",
+              name: localPath.trim(),
               format: "json",
               content: directory_contents,
               created: "",
@@ -116,7 +116,7 @@ export class GCSDrive implements Contents.IDrive {
             resolve({
               type: "file",
               path: content.content.path,
-              name: "",
+              name: content.content.path,
               format: "text",
               content: decoded_content,
               created: "",
@@ -172,9 +172,6 @@ export class GCSDrive implements Contents.IDrive {
       ).then((response) => {})
       resolve(void 0);
     });
-
-
-    return Promise.reject('Unimplemented');
   }
 
   /**

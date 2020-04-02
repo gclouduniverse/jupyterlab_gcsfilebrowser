@@ -69,10 +69,7 @@ async function activateGCSFileBrowser(
   restorer.add(browser, NAMESPACE);
   app.shell.add(browser, 'left', {rank: 100});
 
-
   addCommands(app, factory);
-
-
 }
 
 
