@@ -541,7 +541,6 @@ export class GCSFileBrowserModel implements IDisposable {
       return await this.manager.services.contents.save(path, model);
     };
 
-    debugger;
     if (!chunked) {
       try {
         return await uploadInner(file);
