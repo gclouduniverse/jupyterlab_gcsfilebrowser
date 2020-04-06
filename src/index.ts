@@ -12,6 +12,8 @@ import {IGCSFileBrowserFactory} from './jupyterlab_filebrowser/tokens';
 import {DirListing} from './jupyterlab_filebrowser/listing';
 import {GCSDrive} from './contents';
 
+import {IStatusBar} from '@jupyterlab/statusbar';
+
 import {
   Clipboard,
   MainAreaWidget,
@@ -29,6 +31,8 @@ import {Launcher} from '@jupyterlab/launcher';
 
 import {GCSFileBrowser} from './jupyterlab_filebrowser/browser';
 import {GCSFileBrowserModel} from './jupyterlab_filebrowser/model';
+
+import {FileUploadStatus} from './jupyterlab_filebrowser/uploadstatus';
 
 import {IIconRegistry} from '@jupyterlab/ui-components';
 
@@ -72,7 +76,40 @@ async function activateGCSFileBrowser(
   addCommands(app, factory);
 }
 
+/**
+ * A plugin providing file upload status.
+ */
+export const fileUploadStatus: JupyterFrontEndPlugin<void> = {
+  id: 'gcsfilebrowser-extension:file-upload-status',
+  autoStart: true,
+  requires: [IGCSFileBrowserFactory],
+  optional: [IStatusBar],
+  activate: (
+    app: JupyterFrontEnd,
+    browser: IGCSFileBrowserFactory,
+    statusBar: IStatusBar | null
+  ) => {
+    if (!statusBar) {
+      // Automatically disable if statusbar missing
+      return;
+    }
+    const item = new FileUploadStatus({
+      tracker: browser.tracker
+    });
 
+    statusBar.registerStatusItem(
+      'gcsfilebrowser-extension:file-upload-status',
+      {
+        item,
+        align: 'middle',
+        isActive: () => {
+          return !!item.model && item.model.items.length > 0;
+        },
+        activeStateChanged: item.model.stateChanged
+      }
+    );
+  }
+};
 
 /**
  * The command IDs used by the file browser plugin.
@@ -245,5 +282,9 @@ namespace Private {
 /**
  * Export the plugin as default.
  */
-export default [factory, GCSFileBrowserPlugin];
+export default [
+  factory,
+  GCSFileBrowserPlugin,
+  fileUploadStatus,
+];
 export * from './jupyterlab_filebrowser/tokens';
