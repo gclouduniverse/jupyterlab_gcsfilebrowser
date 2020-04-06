@@ -149,21 +149,22 @@
   transform: translateX(-40%) translateY(-58%);
 }
 
-.jp-cDirListing-deadSpace {
-  flex: 1 1 auto;
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
-  overflow: auto;
-  background-color: var(--jp-layout-color1);
+
+.jp-DirListing-headerItem.jp-id-name {
+  flex: 1 0 84px;
+}
+
+.jp-DirListing-headerItem.jp-id-modified {
+  flex: 0 0 112px;
+  border-left: var(--jp-border-width) solid var(--jp-border-color2);
+  text-align: right;
 }
 
 /*
 Hide 'Upload' and 'New Folder' buttons
 */
 #gcs-filebrowser-widget > div.jp-Toolbar > div:nth-child(1),
-#gcs-filebrowser-widget > div.jp-Toolbar > div:nth-child(2),
-#gcs-filebrowser-widget > div.jp-Toolbar > div:nth-child(3) {
+#gcs-filebrowser-widget > div.jp-Toolbar > div:nth-child(2){
   display: none;
 }
 

@@ -105,12 +105,12 @@ const EDITOR_CLASS = 'jp-gcs-DirListing-editor';
 /**
  * The class name added to the name column header cell.
  */
-const NAME_ID_CLASS = 'jp-id-name';
+const NAME_ID_CLASS = 'jp-gcs-id-name';
 
 /**
  * The class name added to the modified column header cell.
  */
-const MODIFIED_ID_CLASS = 'jp-id-modified';
+const MODIFIED_ID_CLASS = 'jp-gcs-id-modified';
 
 /**
  * The mime type for a contents drag object.

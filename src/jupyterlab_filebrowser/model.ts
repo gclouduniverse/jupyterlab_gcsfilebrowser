@@ -465,7 +465,7 @@ export class GCSFileBrowserModel implements IDisposable {
 
     // Cannot upload to the root directory which contains a list of buckets
     if (this._model.path.endsWith(":") || this._model.path.endsWith(":/")) {
-      let msg = `Cannot upload file to root GCS directory. You must first select a GCS bucket in order to upload.`;
+      let msg = `Cannot upload file to root GCS directory. You must first open a GCS bucket directory in order to upload.`;
       console.warn(msg);
       throw msg;
     }
