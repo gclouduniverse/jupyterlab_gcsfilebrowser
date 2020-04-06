@@ -463,6 +463,13 @@ export class GCSFileBrowserModel implements IDisposable {
     const supportsChunked = PageConfig.getNotebookVersion() >= [5, 1, 0];
     const largeFile = file.size > LARGE_FILE_SIZE;
 
+    // Cannot upload to the root directory which contains a list of buckets
+    if (this._model.path.endsWith(":") || this._model.path.endsWith(":/")) {
+      let msg = `Cannot upload file to root GCS directory. You must first select a GCS bucket in order to upload.`;
+      console.warn(msg);
+      throw msg;
+    }
+
     if (largeFile && !supportsChunked) {
       let msg = `Cannot upload file (>${LARGE_FILE_SIZE / (1024 * 1024)} MB). ${
         file.name
