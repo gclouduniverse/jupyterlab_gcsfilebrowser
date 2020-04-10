@@ -11,7 +11,10 @@ from collections import namedtuple
 from notebook.base.handlers import APIHandler, app_log
 
 from google.cloud import storage # used for connecting to GCS
+from google.api_core.client_info import ClientInfo
 from io import BytesIO, StringIO # used for sending GCS blobs in JSON objects
+from jupyterlab_gcsfilebrowser.version import VERSION
+
 
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
@@ -158,6 +161,12 @@ def delete(path, storage_client):
     else: # Directory
       return {}
 
+def create_storage_client():
+  return storage.Client(
+    client_info=ClientInfo(
+      user_agent='jupyterlab_gcsfilebrowser/{}'.format(VERSION)
+      )
+    )
 
 class GCSHandler(APIHandler):
   """Handles requests for GCS operations."""
@@ -167,7 +176,7 @@ class GCSHandler(APIHandler):
   def get(self, path=''):
     try:
       if not self.storage_client:
-        self.storage_client = storage.Client()
+        self.storage_client = create_storage_client()
 
       self.finish(json.dumps(
         getPathContents(path, self.storage_client)))
@@ -181,7 +190,7 @@ class UploadHandler(APIHandler):
 
   @gen.coroutine
   def post(self, *args, **kwargs):
-    storage_client = storage.Client()
+    storage_client = create_storage_client()
 
     model = self.get_json_body()
 
@@ -256,7 +265,7 @@ class DeleteHandler(APIHandler):
 
     try:
       if not self.storage_client:
-        self.storage_client = storage.Client()
+        self.storage_client = create_storage_client()
 
       self.finish(json.dumps(delete(path, self.storage_client)))
 
