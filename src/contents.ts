@@ -197,8 +197,26 @@ export class GCSDrive implements Contents.IDrive {
         method: "POST",
       };
       ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
-      ).then((response) => {})
-      resolve(void 0);
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return [Private.placeholderDirectory];
+          }
+          resolve({
+            type: "file",
+            path: content.path,
+            name: content.path,
+            format: "text",
+            content: null,
+            created: "",
+            writable: true,
+            last_modified: "",
+            mimetype: null
+          });
+        })
+      });
     });
   }
 
@@ -256,7 +274,41 @@ export class GCSDrive implements Contents.IDrive {
     *  file is copied.
     */
   copy(localPath: string, toLocalDir: string): Promise<Contents.IModel> {
-    return Promise.reject('Unimplemented');
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/copy');
+      const body = {
+        'localPath': localPath,
+        'toLocalDir': toLocalDir,
+      }
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return [Private.placeholderDirectory];
+          }
+          resolve({
+            type: "file",
+            path: content.path,
+            name: content.path,
+            format: "text",
+            content: null,
+            created: "",
+            writable: true,
+            last_modified: "",
+            mimetype: null
+          });
+        })
+      });
+    });
   }
 
   /**

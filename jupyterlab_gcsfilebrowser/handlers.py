@@ -229,14 +229,64 @@ def upload(model, storage_client):
         '%s.temporary' % (blob_path))
 
 
+def generate_next_unique_name(bucket_name, blob_name, storage_client):
+
+  def generate_name(blob_name, name_addendum):
+    root, ext = os.path.splitext(blob_name)
+    addendum = ''
+    if name_addendum:
+      addendum = '-Copy%s' % name_addendum
+
+    return '%s%s%s' % (root, addendum, ext)
+
+  name_addendum = ''
+  proposed_blob_name = generate_name(blob_name, name_addendum)
+
+  while matching_blobs(
+    '/%s/%s' % (bucket_name, proposed_blob_name), storage_client):
+    if not name_addendum:
+      name_addendum = 1
+    else:
+      name_addendum = name_addendum + 1
+
+    proposed_blob_name = generate_name(blob_name, name_addendum)
+
+  return generate_name(blob_name, name_addendum)
+
+
+def copy(path, directory, storage_client):
+
+  def copyFileName(path, directory):
+    _, blob_name = parse_path(path)
+    destination_bucket, destination_blob_name_dir = parse_path(directory)
+    basename = os.path.basename(blob_name)
+
+    if not basename:
+      raise ValueError('"path" is not a valid blob name.')
+    new_blob_name = '%s/%s' % (destination_blob_name_dir, basename)
+
+    return destination_bucket, new_blob_name
+
+  blobs_matching = matching_blobs(path, storage_client)
+  current_bucket = matching_bucket(path, storage_client)
+  destination_bucket_name, new_blob_name = copyFileName(path, directory)
+
+  new_blob_name = generate_next_unique_name(
+    destination_bucket_name, new_blob_name, storage_client)
+
+  destination_bucket = storage_client.get_bucket(destination_bucket_name)
+
+  return current_bucket.copy_blob(
+    blobs_matching[0], destination_bucket, new_blob_name)
+
+
 def move(old, new, storage_client):
   blobs_matching = matching_blobs(old, storage_client)
 
-  new_bucket = matching_bucket(new, storage_client)
+  destination_bucket = matching_bucket(new, storage_client)
 
   _, new_blob_name = parse_path(new)
-
-  return new_bucket.rename_blob(blobs_matching[0], new_blob_name)
+  return destination_bucket.rename_blob(blobs_matching[0], new_blob_name)
 
 
 def create_storage_client():
@@ -317,8 +367,38 @@ class MoveHandler(APIHandler):
       if not self.storage_client:
         self.storage_client = create_storage_client()
 
-      move(move_obj['oldLocalPath'], move_obj['newLocalPath'], self.storage_client)
-      self.finish({})
+      blob = move(move_obj['oldLocalPath'], move_obj['newLocalPath'], self.storage_client)
+      self.finish({
+                  'type': 'file',
+                  'path': blob.path,
+                  'name': blob.name
+                })
+
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
+
+
+class CopyHandler(APIHandler):
+
+  storage_client = None
+
+  @gen.coroutine
+  def post(self, path=''):
+
+    copy_obj = self.get_json_body()
+
+    try:
+      if not self.storage_client:
+        self.storage_client = create_storage_client()
+
+      blob = copy(
+        copy_obj['localPath'], copy_obj['toLocalDir'], self.storage_client)
+      self.finish({
+                  'type': 'file',
+                  'path': blob.path,
+                  'name': blob.name
+                })
 
     except Exception as e:
       app_log.exception(str(e))

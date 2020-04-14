@@ -36,6 +36,8 @@ import {FileUploadStatus} from './jupyterlab_filebrowser/uploadstatus';
 
 import {IIconRegistry} from '@jupyterlab/ui-components';
 
+import {map, toArray} from '@phosphor/algorithm';
+
 const NAMESPACE = 'gcsfilebrowser';
 
 async function activateGCSFileBrowser(
@@ -117,6 +119,11 @@ namespace CommandIDs {
   export const copyGCSURI = 'gcsfilebrowser:copy-gcs-uri';
   export const del = 'gcsfilebrowser:delete';
   export const rename = 'gcsfilebrowser:rename';
+  export const copy = 'gcsfilebrowser:copy';
+  export const cut = 'gcsfilebrowser:cut';
+  export const duplicate = 'gcsfilebrowser:duplicate';
+  export const paste = 'gcsfilebrowser:paste';
+  export const open = 'gcsfilebrowser:open';
 }
 
 
@@ -125,8 +132,104 @@ function addCommands(
   factory: IGCSFileBrowserFactory
 ) {
 
-  const {commands} = app;
+  const {docRegistry: registry, commands} = app;
   const {tracker} = factory;
+
+  commands.addCommand(CommandIDs.open, {
+    execute: args => {
+      const factory = (args['factory'] as string) || void 0;
+      const widget = tracker.currentWidget;
+
+      if (!widget) {
+        return;
+      }
+
+      const {contents} = widget.model.manager.services;
+      return Promise.all(
+        toArray(
+          map(widget.selectedItems(), item => {
+            if (item.type === 'directory') {
+              const localPath = contents.localPath(item.path);
+              return widget.model.cd(`/${localPath}`);
+            }
+
+            return commands.execute('docmanager:open', {
+              factory: factory,
+              path: item.path
+            });
+          })
+        )
+      );
+    },
+    iconClass: args => {
+      const factory = (args['factory'] as string) || void 0;
+      if (factory) {
+        // if an explicit factory is passed...
+        const ft = registry.getFileType(factory);
+        if (ft) {
+          // ...set an icon if the factory name corresponds to a file type name...
+          return ft.iconClass;
+        } else {
+          // ...or leave the icon blank
+          return '';
+        }
+      } else {
+        return 'jp-MaterialIcon jp-FolderIcon';
+      }
+    },
+    label: args => (args['label'] || args['factory'] || 'Open') as string,
+    mnemonic: 0
+  });
+
+  commands.addCommand(CommandIDs.copy, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.copy();
+      }
+    },
+    iconClass: 'jp-MaterialIcon jp-CopyIcon',
+    label: 'Copy',
+    mnemonic: 0
+  });
+
+  commands.addCommand(CommandIDs.duplicate, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.duplicate();
+      }
+    },
+    iconClass: 'jp-MaterialIcon jp-CopyIcon',
+    label: 'Duplicate'
+  });
+
+  commands.addCommand(CommandIDs.cut, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.cut();
+      }
+    },
+    iconClass: 'jp-MaterialIcon jp-CutIcon',
+    label: 'Cut'
+  });
+
+  commands.addCommand(CommandIDs.paste, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.paste();
+      }
+    },
+    iconClass: 'jp-MaterialIcon jp-PasteIcon',
+    label: 'Paste',
+    mnemonic: 0
+  });
 
   commands.addCommand(CommandIDs.rename, {
     execute: args => {
@@ -136,7 +239,7 @@ function addCommands(
         return widget.rename();
       }
     },
-    iconClass: 'jp-EditIcon',
+    iconClass: 'jp-MaterialIcon jp-EditIcon',
     label: 'Rename',
     mnemonic: 0
   });
@@ -149,7 +252,7 @@ function addCommands(
         return widget.delete();
       }
     },
-    iconClass: 'jp-CloseIcon',
+    iconClass: 'jp-MaterialIcon jp-CloseIcon',
     label: 'Delete',
     mnemonic: 0
   });
@@ -167,32 +270,57 @@ function addCommands(
           Clipboard.copyToSystem(url);
         });
     },
-    iconClass: 'jp-CopyIcon',
+    iconClass: 'jp-MaterialIcon jp-CopyIcon',
     label: 'Copy GCS URI (gs://)',
     mnemonic: 0
   });
 
   // matches anywhere on filebrowser
-  // const selectorContent = '.jp-gcs-DirListing-content';
+  const selectorContent = '.jp-gcs-DirListing-content';
   // matches all filebrowser items
-  // const selectorItem = '.jp-gcs-DirListing-item[data-isdir]';
+  const selectorItem = '.jp-gcs-DirListing-item[data-isdir]';
   // matches only non-directory items
   const selectorNotDir = '.jp-gcs-DirListing-item[data-isdir="false"]';
 
   app.contextMenu.addItem({
-    command: CommandIDs.rename,
-    selector: selectorNotDir,
+    command: CommandIDs.open,
+    selector: selectorItem,
     rank: 1
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.cut,
+    selector: selectorItem,
+    rank: 2
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.copy,
+    selector: selectorNotDir,
+    rank: 3
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.duplicate,
+    selector: selectorNotDir,
+    rank: 4
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.paste,
+    selector: selectorContent,
+    rank: 5
   });
   app.contextMenu.addItem({
     command: CommandIDs.copyGCSURI,
     selector: selectorNotDir,
-    rank: 2
+    rank: 6
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.rename,
+    selector: selectorNotDir,
+    rank: 7
   });
   app.contextMenu.addItem({
     command: CommandIDs.del,
     selector: selectorNotDir,
-    rank: 3
+    rank: 8
   });
 
 }
