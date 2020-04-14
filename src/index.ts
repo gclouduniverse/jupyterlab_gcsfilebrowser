@@ -289,7 +289,7 @@ function addCommands(
   });
   app.contextMenu.addItem({
     command: CommandIDs.cut,
-    selector: selectorItem,
+    selector: selectorNotDir,
     rank: 2
   });
   app.contextMenu.addItem({
