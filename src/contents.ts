@@ -1,5 +1,3 @@
-
-import {DocumentRegistry} from '@jupyterlab/docregistry';
 import {ISignal, Signal} from '@phosphor/signaling';
 import {Contents, ServerConnection} from '@jupyterlab/services';
 import {URLExt} from "@jupyterlab/coreutils";
@@ -11,10 +9,8 @@ export class GCSDrive implements Contents.IDrive {
 
   /**
    * Construct a new drive object.
-   *
-   * @param options - The options used to initialize the object.
    */
-  constructor(registry: DocumentRegistry) {
+  constructor() {
   }
 
   private _isDisposed = false;
@@ -185,7 +181,23 @@ export class GCSDrive implements Contents.IDrive {
     *   file is renamed.
     */
   rename(oldLocalPath: string, newLocalPath: string): Promise<Contents.IModel> {
-    return Promise.reject('Unimplemented');
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/move');
+      const body = {
+        'oldLocalPath': oldLocalPath,
+        'newLocalPath': newLocalPath,
+      }
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {})
+      resolve(void 0);
+    });
   }
 
   /**
@@ -229,10 +241,7 @@ export class GCSDrive implements Contents.IDrive {
         resolve(data);
       });
     });
-
   }
-
-
 
   /**
     * Copy a file into a given directory.

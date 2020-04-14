@@ -44,7 +44,7 @@ async function activateGCSFileBrowser(
   factory: IGCSFileBrowserFactory,
   restorer: ILayoutRestorer
 ) {
-  const drive = new GCSDrive(app.docRegistry);
+  const drive = new GCSDrive();
   manager.services.contents.addDrive(drive);
 
   const browser = factory.createFileBrowser(NAMESPACE, {
@@ -117,6 +117,7 @@ export const fileUploadStatus: JupyterFrontEndPlugin<void> = {
 namespace CommandIDs {
   export const copyGCSURI = 'gcsfilebrowser:copy-gcs-uri';
   export const del = 'gcsfilebrowser:delete';
+  export const rename = 'gcsfilebrowser:rename';
 }
 
 
@@ -127,6 +128,19 @@ function addCommands(
 
   const {commands} = app;
   const {tracker} = factory;
+
+  commands.addCommand(CommandIDs.rename, {
+    execute: args => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.rename();
+      }
+    },
+    iconClass: 'jp-EditIcon',
+    label: 'Rename',
+    mnemonic: 0
+  });
 
   commands.addCommand(CommandIDs.del, {
     execute: () => {
@@ -169,14 +183,19 @@ function addCommands(
   const selectorNotDir = '.jp-gcs-DirListing-item[data-isdir="false"]';
 
   app.contextMenu.addItem({
-    command: CommandIDs.copyGCSURI,
+    command: CommandIDs.rename,
     selector: selectorNotDir,
     rank: 1
   });
   app.contextMenu.addItem({
-    command: CommandIDs.del,
+    command: CommandIDs.copyGCSURI,
     selector: selectorNotDir,
     rank: 2
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.del,
+    selector: selectorNotDir,
+    rank: 3
   });
 
 }

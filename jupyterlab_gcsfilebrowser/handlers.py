@@ -22,8 +22,6 @@ def list_dir(bucket_name, path, blobs_dir_list):
 
   path = '%s%s' % (path, '' if re.match(".*/$", path) else '/')
 
-  # print('list_dir', (bucket_name, path, blobs_dir_list))
-
   for blob in blobs_dir_list:
     relative_blob_name = re.sub(r'^' + path, '', blob.name)
 
@@ -53,8 +51,6 @@ def list_dir(bucket_name, path, blobs_dir_list):
                   'name': dir_name
                 })
 
-  # print('list_dir', (bucket_name, path))
-
   if path != '/':
     path = '/' + path
 
@@ -65,6 +61,56 @@ def list_dir(bucket_name, path, blobs_dir_list):
                   } for d in directories]
 
   return items
+
+
+# TODO(cbwilkes): Add tests for parse_path.
+def parse_path(path):
+  # Remove any preceeding '/', and split off the bucket name
+  bucket_paths = re.sub(r'^/', '', path).split('/', 1)
+
+  # The first token should represent the bucket name
+  bucket_name = bucket_paths[0]
+
+  # The rest of the string should represent the blob path, if requested
+  blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
+
+  return bucket_name, blob_path
+
+
+def prefixed_blobs(bucket_name, prefix, storage_client):
+  return list(storage_client.list_blobs(
+    bucket_name, prefix=prefix))
+
+
+def matching_blobs(path, storage_client):
+  """Find a blob with a name that matches the exact path.
+
+  Returns:
+    An array of matching Blobs.
+  """
+
+  # TODO(cbwilkes): Add tests for matching_blobs.
+  # TODO(cbwilkes): Return matching blobs for directories.
+  bucket_name, blob_path = parse_path(path)
+
+  # List blobs in the bucket with the blob_path prefix
+  blobs = prefixed_blobs(bucket_name, blob_path, storage_client)
+
+  # Find a blob that is not a directory name and fully matches the blob_path
+  # If there are any matches, we are retriving a single blob
+  blobs_matching = [b
+        for b in blobs
+        # TODO(cbwilkes): protect against empty names
+        if not re.match(".*/$", b.name) and b.name == blob_path]
+
+  return blobs_matching
+
+
+def matching_bucket(path, storage_client):
+  bucket_name, _ = parse_path(path)
+
+  # Raises google.cloud.exceptions.NotFound – If the bucket is not found.
+  return storage_client.get_bucket(bucket_name)
 
 
 def getPathContents(path, storage_client):
@@ -83,28 +129,14 @@ def getPathContents(path, storage_client):
                     } for b in buckets]
     }
   else:
-    # Remove any preceeding '/', and split off the bucket name
-    bucket_paths = re.sub(r'^/', '', path).split('/', 1)
+    bucket_name, blob_path = parse_path(path)
 
-    # The first token should represent the bucket name
-    bucket_name = bucket_paths[0]
+    blobs_prefixed = prefixed_blobs(bucket_name, blob_path, storage_client)
 
-    # The rest of the string should represent the blob path, if requested
-    blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
+    blobs_matching = matching_blobs(path, storage_client)
 
-    # List blobs in the bucket with the blob_path prefix
-    blobs = list(storage_client.list_blobs(
-      bucket_name, prefix=blob_path))
-
-    # Find a blob that is not a directory name and fully matches the blob_path
-    # If there are any matches, we are retriving a single blob
-    matching_blobs = [b
-          for b in blobs
-          # TODO(cbwilkes): protect against empty names
-          if not re.match(".*/$", b.name) and b.name == blob_path]
-
-    if len(matching_blobs) == 1: # Single blob
-      blob = matching_blobs[0]
+    if len(blobs_matching) == 1: # Single blob
+      blob = blobs_matching[0]
       file_bytes = BytesIO()
       blob.download_to_file(file_bytes)
 
@@ -121,7 +153,7 @@ def getPathContents(path, storage_client):
     else: # Directory
       return {
         'type': 'directory',
-        'content': list_dir(bucket_name, blob_path, blobs)
+        'content': list_dir(bucket_name, blob_path, blobs_prefixed)
         }
 
 
@@ -133,33 +165,79 @@ def delete(path, storage_client):
   if path == '/':
     return {}
   else:
-    # Remove any preceeding '/', and split off the bucket name
-    bucket_paths = re.sub(r'^/', '', path).split('/', 1)
+    blobs_matching = matching_blobs(path, storage_client)
 
-    # The first token should represent the bucket name
-    bucket_name = bucket_paths[0]
-
-    # The rest of the string should represent the blob path, if requested
-    blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
-
-    # List blobs in the bucket with the blob_path prefix
-    blobs = list(storage_client.list_blobs(
-      bucket_name, prefix=blob_path))
-
-    # Find a blob that is not a directory name and fully matches the blob_path
-    # If there are any matches, we are retriving a single blob
-    matching_blobs = [b
-          for b in blobs
-          # TODO(cbwilkes): protect against empty names
-          if not re.match(".*/$", b.name) and b.name == blob_path]
-
-    if len(matching_blobs) == 1: # Single blob
-      blob = matching_blobs[0]
+    if len(blobs_matching) == 1: # Single blob
+      blob = blobs_matching[0]
       blob.delete()
 
       return {}
     else: # Directory
       return {}
+
+
+def upload(model, storage_client):
+  bucket_name, blob_path = parse_path(model['path'])
+
+  def uploadModel(storage_client, model, blob_path):
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_path)
+    if model['format'] == 'base64':
+      bytes_file = BytesIO(base64.b64decode(model['content']))
+      blob.upload_from_file(bytes_file)
+    elif model['format'] == 'json':
+      blob.upload_from_string(json.dumps(model['content']))
+    else:
+      blob.upload_from_string(model['content'])
+
+  def appendChunk(storage_client, model, last, temp, composite, deleteLast=False):
+    bucket = storage_client.get_bucket(bucket_name)
+    uploadModel(storage_client, model, temp)
+
+    blob = bucket.blob(composite)
+
+    blob_last = bucket.blob(last)
+    blob_temp = bucket.blob(temp)
+
+    blob.compose([blob_last, blob_temp])
+
+    blob_temp.delete()
+
+    if deleteLast:
+      blob_last.delete()
+
+  if 'chunk' not in model:
+    uploadModel(storage_client, model, blob_path)
+  else:
+    if model['chunk'] == 1:
+      blob_path_composite = '%s.temporary' % (blob_path)
+      uploadModel(storage_client, model, blob_path_composite)
+    elif model['chunk'] == -1:
+      appendChunk(
+        storage_client,
+        model,
+        '%s.temporary' % (blob_path),
+        '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
+        blob_path,
+        True)
+    else:
+      appendChunk(
+        storage_client,
+        model,
+        '%s.temporary' % (blob_path),
+        '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
+        '%s.temporary' % (blob_path))
+
+
+def move(old, new, storage_client):
+  blobs_matching = matching_blobs(old, storage_client)
+
+  new_bucket = matching_bucket(new, storage_client)
+
+  _, new_blob_name = parse_path(new)
+
+  return new_bucket.rename_blob(blobs_matching[0], new_blob_name)
+
 
 def create_storage_client():
   return storage.Client(
@@ -167,6 +245,7 @@ def create_storage_client():
       user_agent='jupyterlab_gcsfilebrowser/{}'.format(VERSION)
       )
     )
+
 
 class GCSHandler(APIHandler):
   """Handles requests for GCS operations."""
@@ -188,72 +267,23 @@ class GCSHandler(APIHandler):
 
 class UploadHandler(APIHandler):
 
+  storage_client = None
+
   @gen.coroutine
   def post(self, *args, **kwargs):
-    storage_client = create_storage_client()
 
-    model = self.get_json_body()
+    try:
+      if not self.storage_client:
+        self.storage_client = create_storage_client()
 
-    # Remove any preceeding '/', and split off the bucket name
-    bucket_paths = re.sub(r'^/', '', model['path']).split('/', 1)
+      model = self.get_json_body()
 
-    # The first token should represent the bucket name
-    bucket_name = bucket_paths[0]
+      upload(model, self.storage_client)
 
-    # The rest of the string should represent the blob path, if requested
-    blob_path = bucket_paths[1] if len(bucket_paths) > 1 else ''
-
-    def uploadModel(storage_client, model, blob_path):
-      bucket = storage_client.get_bucket(bucket_name)
-      blob = bucket.blob(blob_path)
-      if model['format'] == 'base64':
-        bytes_file = BytesIO(base64.b64decode(model['content']))
-        blob.upload_from_file(bytes_file)
-      elif model['format'] == 'json':
-        blob.upload_from_string(json.dumps(model['content']))
-      else:
-        blob.upload_from_string(model['content'])
-
-    def appendChunk(storage_client, model, last, temp, composite, deleteLast=False):
-      bucket = storage_client.get_bucket(bucket_name)
-      print("Saving chunk number %s to %s" % (model['chunk'], blob_path))
-      uploadModel(storage_client, model, temp)
-
-      blob = bucket.blob(composite)
-
-      blob_last = bucket.blob(last)
-      blob_temp = bucket.blob(temp)
-
-      blob.compose([blob_last, blob_temp])
-
-      blob_temp.delete()
-
-      if deleteLast:
-        blob_last.delete()
-
-    if 'chunk' not in model:
-      uploadModel(storage_client, model, blob_path)
-    else:
-      if model['chunk'] == 1:
-        blob_path_composite = '%s.temporary' % (blob_path)
-        uploadModel(storage_client, model, blob_path_composite)
-      elif model['chunk'] == -1:
-        appendChunk(
-          storage_client,
-          model,
-          '%s.temporary' % (blob_path),
-          '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
-          blob_path,
-          True)
-      else:
-        appendChunk(
-          storage_client,
-          model,
-          '%s.temporary' % (blob_path),
-          '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
-          '%s.temporary' % (blob_path))
-
-    self.finish({})
+      self.finish({})
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
 
 
 class DeleteHandler(APIHandler):
@@ -273,3 +303,23 @@ class DeleteHandler(APIHandler):
       app_log.exception(str(e))
       self.set_status(500, str(e))
 
+
+class MoveHandler(APIHandler):
+
+  storage_client = None
+
+  @gen.coroutine
+  def post(self, path=''):
+
+    move_obj = self.get_json_body()
+
+    try:
+      if not self.storage_client:
+        self.storage_client = create_storage_client()
+
+      move(move_obj['oldLocalPath'], move_obj['newLocalPath'], self.storage_client)
+      self.finish({})
+
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
