@@ -38,7 +38,7 @@ import {GCSDrive} from '../contents';
 /**
  * The default duration of the auto-refresh in ms
  */
-const DEFAULT_REFRESH_INTERVAL = 10000;
+const DEFAULT_REFRESH_INTERVAL = 5000;
 
 /**
  * The maximum upload size (in bytes) for notebook version < 5.1.0
@@ -315,16 +315,12 @@ export class GCSFileBrowserModel implements IDisposable {
     };
 
     let services = this.manager.services;
-    if (newValue !== '') {
-      this._pending = this.getGCSDriveContents(newValue, options)
-        .then(handleContents)
-        .catch(handleError);
+    if (newValue === '') {
+      newValue = this._driveName ? this._driveName + ':' : '';
     }
-    else {
-      this._pending = services.contents.get(newValue, options)
-        .then(handleContents)
-        .catch(handleError);
-    }
+    this._pending = this.getGCSDriveContents(newValue, options)
+      .then(handleContents)
+      .catch(handleError);
     return this._pending;
   }
 
@@ -364,7 +360,6 @@ export class GCSFileBrowserModel implements IDisposable {
     });
 
   }
-
 
   addGCSDrive(drive: GCSDrive) {
     this._additionalDrives.set(drive.name, drive);

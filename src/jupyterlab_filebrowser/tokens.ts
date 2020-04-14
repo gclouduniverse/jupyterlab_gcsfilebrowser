@@ -49,11 +49,6 @@ export interface IGCSFileBrowserFactory {
    * The widget tracker used by the factory to track file browsers.
    */
   readonly tracker: WidgetTracker<GCSFileBrowser>;
-
-  /**
-   * The default file browser for the application.
-   */
-  defaultBrowser: GCSFileBrowser;
 }
 
 /**

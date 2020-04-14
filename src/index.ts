@@ -48,8 +48,7 @@ async function activateGCSFileBrowser(
   manager.services.contents.addDrive(drive);
 
   const browser = factory.createFileBrowser(NAMESPACE, {
-    driveName: drive.name,
-    refreshInterval: 300000
+    driveName: drive.name
   });
 
   let widgets = browser.layout.iter();
@@ -173,8 +172,6 @@ function addCommands(
     mnemonic: 0
   });
 
-
-
   // matches anywhere on filebrowser
   // const selectorContent = '.jp-gcs-DirListing-content';
   // matches all filebrowser items
@@ -258,9 +255,8 @@ function activateFactory(
 
     return widget;
   };
-  const defaultBrowser = createFileBrowser(NAMESPACE);
 
-  return {createFileBrowser, defaultBrowser, tracker};
+  return {createFileBrowser, tracker};
 }
 
 

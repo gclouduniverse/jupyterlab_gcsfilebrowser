@@ -2,6 +2,8 @@ import {ISignal, Signal} from '@phosphor/signaling';
 import {Contents, ServerConnection} from '@jupyterlab/services';
 import {URLExt} from "@jupyterlab/coreutils";
 
+const DRIVE_NAME_GCS: 'GCS' = 'GCS';
+
 /**
  * A Contents.IDrive implementation that Google Cloud Storage.
  */
@@ -19,8 +21,8 @@ export class GCSDrive implements Contents.IDrive {
   /**
    * The name of the drive.
    */
-  get name(): 'GCS' {
-    return 'GCS';
+  get name() {
+    return DRIVE_NAME_GCS;
   }
 
   /**
