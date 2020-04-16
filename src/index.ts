@@ -39,6 +39,7 @@ import {IIconRegistry} from '@jupyterlab/ui-components';
 import {map, toArray} from '@phosphor/algorithm';
 
 const NAMESPACE = 'gcsfilebrowser';
+const GCS_URI_PREFIX = 'gs://';
 
 async function activateGCSFileBrowser(
   app: JupyterFrontEnd,
@@ -124,6 +125,7 @@ namespace CommandIDs {
   export const duplicate = 'gcsfilebrowser:duplicate';
   export const paste = 'gcsfilebrowser:paste';
   export const open = 'gcsfilebrowser:open';
+  export const download = 'gcsfilebrowser:download';
 }
 
 
@@ -264,15 +266,26 @@ function addCommands(
         return;
       }
 
-      return widget.model.manager.services.contents
-        .getDownloadUrl(widget.selectedItems().next()!.path)
-        .then(url => {
-          Clipboard.copyToSystem(url);
-        });
+      const localPath = widget.model.manager.services.contents.localPath(
+        widget.selectedItems().next()!.path
+      );
+      Clipboard.copyToSystem(GCS_URI_PREFIX + localPath);
     },
     iconClass: 'jp-MaterialIcon jp-CopyIcon',
     label: 'Copy GCS URI (gs://)',
     mnemonic: 0
+  });
+
+  commands.addCommand(CommandIDs.download, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.download();
+      }
+    },
+    iconClass: 'jp-MaterialIcon jp-DownloadIcon',
+    label: 'Download'
   });
 
   // matches anywhere on filebrowser
@@ -321,6 +334,11 @@ function addCommands(
     command: CommandIDs.del,
     selector: selectorNotDir,
     rank: 8
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.download,
+    selector: selectorNotDir,
+    rank: 9
   });
 
 }

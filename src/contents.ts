@@ -3,6 +3,7 @@ import {Contents, ServerConnection} from '@jupyterlab/services';
 import {URLExt} from "@jupyterlab/coreutils";
 
 const DRIVE_NAME_GCS: 'GCS' = 'GCS';
+const GCS_LINK_PREFIX = 'https://storage.cloud.google.com/';
 
 /**
  * A Contents.IDrive implementation that Google Cloud Storage.
@@ -135,7 +136,7 @@ export class GCSDrive implements Contents.IDrive {
     *   file path on the server.
     */
   getDownloadUrl(localPath: string): Promise<string> {
-    return Promise.resolve('gs://' + localPath);
+    return Promise.resolve(GCS_LINK_PREFIX + localPath);
   }
 
   /**
