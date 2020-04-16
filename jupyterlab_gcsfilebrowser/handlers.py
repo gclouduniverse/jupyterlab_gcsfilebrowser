@@ -243,7 +243,8 @@ def generate_next_unique_name(bucket_name, blob_name, storage_client):
   proposed_blob_name = generate_name(blob_name, name_addendum)
 
   while matching_blobs(
-    '/%s/%s' % (bucket_name, proposed_blob_name), storage_client):
+    os.path.normpath('/%s/%s' % (bucket_name, proposed_blob_name)),
+    storage_client):
     if not name_addendum:
       name_addendum = 1
     else:
