@@ -1,6 +1,6 @@
 from notebook.utils import url_path_join
 
-from jupyterlab_gcsfilebrowser.handlers import CopyHandler, DeleteHandler, GCSHandler, MoveHandler, UploadHandler
+from jupyterlab_gcsfilebrowser.handlers import CopyHandler, DeleteHandler, GCSHandler, MoveHandler, NewHandler, UploadHandler
 from jupyterlab_gcsfilebrowser.version import VERSION
 
 __version__ = VERSION
@@ -28,5 +28,6 @@ def load_jupyter_server_extension(nb_server_app):
       (url_path_join(gcp_v1_endpoint, 'delete', ) + '(.*)', DeleteHandler),
       (url_path_join(gcp_v1_endpoint, 'move', ) + '(.*)', MoveHandler),
       (url_path_join(gcp_v1_endpoint, 'copy', ) + '(.*)', CopyHandler),
+      (url_path_join(gcp_v1_endpoint, 'new', ) + '(.*)', NewHandler),
     ])
 

@@ -15,6 +15,9 @@ from google.api_core.client_info import ClientInfo
 from io import BytesIO, StringIO # used for sending GCS blobs in JSON objects
 from jupyterlab_gcsfilebrowser.version import VERSION
 
+TEMPLATE_COPY_FILE = '-Copy%s'
+TEMPLATE_NEW_FILE = '%s'
+NEW_FILE_NAME = 'Untitled'
 
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
@@ -228,14 +231,17 @@ def upload(model, storage_client):
         '%s.temporary-%s.tmp' % (blob_path, model['chunk']),
         '%s.temporary' % (blob_path))
 
+  bucket = storage_client.get_bucket(bucket_name)
+  return bucket.blob(blob_path)
 
-def generate_next_unique_name(bucket_name, blob_name, storage_client):
+def generate_next_unique_name(
+  bucket_name, blob_name, storage_client, template = TEMPLATE_COPY_FILE):
 
   def generate_name(blob_name, name_addendum):
     root, ext = os.path.splitext(blob_name)
     addendum = ''
     if name_addendum:
-      addendum = '-Copy%s' % name_addendum
+      addendum = template % name_addendum
 
     return '%s%s%s' % (root, addendum, ext)
 
@@ -297,6 +303,53 @@ def create_storage_client():
       )
     )
 
+def new_file(file_type, ext, path, storage_client):
+  model = dict()
+  content = ''
+  file_format = 'text'
+
+  if file_type and file_type in ('notebook', 'file'):
+    if file_type == 'notebook':
+      ext = 'ipynb'
+      file_format = 'json'
+      content = {
+        "cells": [],
+        "metadata": {},
+        "nbformat": 4,
+        "nbformat_minor": 4
+      }
+
+    new_blob_name = '%s/%s.%s' % (
+      path, NEW_FILE_NAME, ext)
+
+    destination_bucket_name, blob_path = parse_path(new_blob_name)
+
+    new_blob_name = generate_next_unique_name(
+      destination_bucket_name,
+      blob_path,
+      storage_client,
+      TEMPLATE_NEW_FILE)
+
+    model['path'] = '%s/%s' % (
+      destination_bucket_name, new_blob_name)
+    model['content'] = content
+    model['format'] = file_format
+    blob = upload(model, storage_client)
+
+    file_bytes = BytesIO()
+    blob.download_to_file(file_bytes)
+
+    return {
+      'type': 'file',
+      'content': {
+        'path': ('%s/%s' % (blob.bucket.name, blob.name)),
+        'name': os.path.basename(blob.name),
+        'type': 'file',
+        'mimetype': blob.content_type,
+        'content': base64.encodebytes(
+          file_bytes.getvalue()).decode('ascii')
+      }
+    }
 
 class GCSHandler(APIHandler):
   """Handles requests for GCS operations."""
@@ -400,6 +453,32 @@ class CopyHandler(APIHandler):
                   'path': blob.path,
                   'name': blob.name
                 })
+
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
+
+
+class NewHandler(APIHandler):
+
+  storage_client = None
+
+  @gen.coroutine
+  def post(self, path=''):
+
+    new_obj = self.get_json_body()
+
+    try:
+      if not self.storage_client:
+        self.storage_client = create_storage_client()
+
+      self.finish(new_file(
+        new_obj['type'],
+        new_obj.get('ext', None),
+        new_obj['path'],
+        self.storage_client
+        )
+      )
 
     except Exception as e:
       app_log.exception(str(e))

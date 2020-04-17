@@ -80,6 +80,7 @@ export class GCSDrive implements Contents.IDrive {
             reject(content.error);
             return [Private.placeholderDirectory];
           }
+
           if (content.type == 'directory') {
             let directory_contents = content.content.map((c: any) => {
               return {
@@ -124,6 +125,8 @@ export class GCSDrive implements Contents.IDrive {
               mimetype: content.content.mimetype
             });
           }
+
+
         });
       });
     });
@@ -148,7 +151,71 @@ export class GCSDrive implements Contents.IDrive {
     *    file is created.
     */
   newUntitled(options?: Contents.ICreateOptions): Promise<Contents.IModel> {
-    return Promise.reject('Unimplemented');
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/new');
+      const body = options
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return [Private.placeholderDirectory];
+          }
+          if (content.type == 'directory') {
+            let directory_contents = content.content.map((c: any) => {
+              return {
+                name: c.name,
+                path: c.path,
+                format: "json",
+                type: c.type,
+                created: "",
+                writable: true,
+                last_modified: "",
+                mimetype: c.mimetype,
+                content: c.content
+              };
+            })
+            let directory: Contents.IModel = {
+              type: "directory",
+              path: content.content.path,
+              name: content.content.name,
+              format: "json",
+              content: directory_contents,
+              created: "",
+              writable: true,
+              last_modified: "",
+              mimetype: ""
+            }
+            resolve(directory);
+          }
+          else if (content.type == "file") {
+            let decoded_content = Buffer.from(
+              content.content.content.replace(/\n/g, ""),
+              'base64').toString('utf8')
+
+            resolve({
+              type: "file",
+              path: content.content.path,
+              name: content.content.name,
+              format: "text",
+              content: decoded_content,
+              created: "",
+              writable: true,
+              last_modified: "",
+              mimetype: content.content.mimetype
+            });
+          }
+        })
+      });
+    });
   }
 
   /**
