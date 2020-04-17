@@ -18,6 +18,7 @@ from jupyterlab_gcsfilebrowser.version import VERSION
 TEMPLATE_COPY_FILE = '-Copy%s'
 TEMPLATE_NEW_FILE = '%s'
 NEW_FILE_NAME = 'Untitled'
+NEW_DIRECTORY_NAME = 'Untitled Folder'
 
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
@@ -86,7 +87,8 @@ def prefixed_blobs(bucket_name, prefix, storage_client):
 
 
 def matching_blobs(path, storage_client):
-  """Find a blob with a name that matches the exact path.
+  """Find a blob with a name that matches the exact path. That is not a
+     directory
 
   Returns:
     An array of matching Blobs.
@@ -108,6 +110,30 @@ def matching_blobs(path, storage_client):
 
   return blobs_matching
 
+
+def matching_directory(path, storage_client):
+  """Find a blob with a name that matches the exact path. Must be a
+     directory
+
+  Returns:
+    An array of matching Blobs.
+  """
+
+  # TODO(cbwilkes): Add tests for matching_blobs.
+  # TODO(cbwilkes): Return matching blobs for directories.
+  bucket_name, blob_path = parse_path(path)
+
+  # List blobs in the bucket with the blob_path prefix
+  blobs = prefixed_blobs(bucket_name, blob_path, storage_client)
+
+  # Find a blob that is not a directory name and fully matches the blob_path
+  # If there are any matches, we are retriving a single blob
+  blobs_matching = [b
+        for b in blobs
+        # TODO(cbwilkes): protect against empty names
+        if re.match(".*/$", b.name) and b.name == blob_path]
+
+  return blobs_matching
 
 def matching_bucket(path, storage_client):
   bucket_name, _ = parse_path(path)
@@ -235,7 +261,11 @@ def upload(model, storage_client):
   return bucket.blob(blob_path)
 
 def generate_next_unique_name(
-  bucket_name, blob_name, storage_client, template = TEMPLATE_COPY_FILE):
+  bucket_name,
+  blob_name,
+  storage_client,
+  template,
+  is_dir=False):
 
   def generate_name(blob_name, name_addendum):
     root, ext = os.path.splitext(blob_name)
@@ -245,20 +275,43 @@ def generate_next_unique_name(
 
     return '%s%s%s' % (root, addendum, ext)
 
+  def generate_directory_name(blob_name, name_addendum):
+    normpath = os.path.normpath(blob_name)
+    addendum = ''
+    if name_addendum:
+      addendum = template % name_addendum
+
+    return '%s%s%s' % (normpath, addendum, '/')
+
   name_addendum = ''
-  proposed_blob_name = generate_name(blob_name, name_addendum)
 
-  while matching_blobs(
-    os.path.normpath('/%s/%s' % (bucket_name, proposed_blob_name)),
-    storage_client):
-    if not name_addendum:
-      name_addendum = 1
-    else:
-      name_addendum = name_addendum + 1
+  if is_dir:
+    proposed_blob_name = generate_directory_name(
+      blob_name, name_addendum)
+    while matching_directory(
+      os.path.normpath('/%s/%s' % (bucket_name, proposed_blob_name)) + '/',
+      storage_client):
+      if not name_addendum:
+        name_addendum = 1
+      else:
+        name_addendum = name_addendum + 1
 
+      proposed_blob_name = generate_directory_name(
+        blob_name, name_addendum)
+    return generate_directory_name(blob_name, name_addendum)
+  else:
     proposed_blob_name = generate_name(blob_name, name_addendum)
+    while matching_blobs(
+      os.path.normpath('/%s/%s' % (bucket_name, proposed_blob_name)),
+      storage_client):
+      if not name_addendum:
+        name_addendum = 1
+      else:
+        name_addendum = name_addendum + 1
 
-  return generate_name(blob_name, name_addendum)
+      proposed_blob_name = generate_name(blob_name, name_addendum)
+
+    return generate_name(blob_name, name_addendum)
 
 
 def copy(path, directory, storage_client):
@@ -279,7 +332,7 @@ def copy(path, directory, storage_client):
   destination_bucket_name, new_blob_name = copyFileName(path, directory)
 
   new_blob_name = generate_next_unique_name(
-    destination_bucket_name, new_blob_name, storage_client)
+    destination_bucket_name, new_blob_name, storage_client, TEMPLATE_COPY_FILE)
 
   destination_bucket = storage_client.get_bucket(destination_bucket_name)
 
@@ -349,6 +402,30 @@ def new_file(file_type, ext, path, storage_client):
         'content': base64.encodebytes(
           file_bytes.getvalue()).decode('ascii')
       }
+    }
+  elif file_type and file_type == 'directory':
+    new_blob_name = '%s/%s/' % (path, NEW_DIRECTORY_NAME)
+
+    destination_bucket_name, blob_path = parse_path(new_blob_name)
+
+    new_blob_name = generate_next_unique_name(
+      destination_bucket_name,
+      blob_path,
+      storage_client,
+      TEMPLATE_NEW_FILE,
+      is_dir=True)
+
+    model['path'] = '%s/%s' % (
+      destination_bucket_name, new_blob_name)
+    model['content'] = ''
+    model['format'] = 'text'
+    blob = upload(model, storage_client)
+
+    return {
+      'type': 'directory',
+      'path': ('%s/%s' % (blob.bucket.name, blob.name)),
+      'name': blob.name,
+      'content': []
     }
 
 class GCSHandler(APIHandler):

@@ -185,8 +185,8 @@ export class GCSDrive implements Contents.IDrive {
             })
             let directory: Contents.IModel = {
               type: "directory",
-              path: content.content.path,
-              name: content.content.name,
+              path: content.path,
+              name: content.name,
               format: "json",
               content: directory_contents,
               created: "",

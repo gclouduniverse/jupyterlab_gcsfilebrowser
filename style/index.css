@@ -161,13 +161,6 @@
 }
 
 /*
-Hide 'Upload' and 'New Folder' buttons
-*/
-#gcs-filebrowser-widget > div.jp-Toolbar > div:nth-child(2){
-  display: none;
-}
-
-/*
 Hide last modified column
 */
 #gcs-filebrowser-widget .jp-gcs-DirListing-itemModified,
