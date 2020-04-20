@@ -1,6 +1,6 @@
 {
   "name": "jupyterlab_gcsfilebrowser",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "GCS Notebooks File Browser Extension",
   "keywords": [
     "jupyter",
