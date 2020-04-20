@@ -270,7 +270,7 @@ export class GCSDrive implements Contents.IDrive {
           if (content.error) {
             console.error(content.error);
             reject(content.error);
-            return [Private.placeholderDirectory];
+            return;
           }
           resolve({
             type: "file",

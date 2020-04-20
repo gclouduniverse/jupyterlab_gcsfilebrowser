@@ -343,7 +343,7 @@ export class DirListing extends Widget {
 
     each(this._clipboard, path => {
       if (this._isCut) {
-        const parts = path.split('/');
+        const parts = path.split('/').filter(x => x != "");
         const name = parts[parts.length - 1];
         const newPath = PathExt.join(basePath, name);
         promises.push(this._model.manager.rename(path, newPath));

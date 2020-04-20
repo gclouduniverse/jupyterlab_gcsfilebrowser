@@ -135,6 +135,30 @@ def matching_directory(path, storage_client):
 
   return blobs_matching
 
+
+def matching_directory_contents(path, storage_client):
+  """Find blobs within a directory.
+
+  Returns:
+    An array of matching Blobs.
+  Raises:
+    ValueError if 'path' is not a directory
+  """
+
+  if not path or path[-1] != '/':
+    raise ValueError(
+  'Error: the path does not appear to be'
+  ' a directory ending with an trailing "/"')
+
+  # TODO(cbwilkes): Add tests for matching_blobs.
+  # TODO(cbwilkes): Return matching blobs for directories.
+  bucket_name, blob_path = parse_path(path)
+
+  # List blobs in the bucket with the blob_path prefix
+  blobs = prefixed_blobs(bucket_name, blob_path, storage_client)
+
+  return blobs
+
 def matching_bucket(path, storage_client):
   bucket_name, _ = parse_path(path)
 
@@ -341,12 +365,41 @@ def copy(path, directory, storage_client):
 
 
 def move(old, new, storage_client):
-  blobs_matching = matching_blobs(old, storage_client)
+  def add_directory_slash(path):
+    return '%s/' % path if not path or path[-1] != '/' else path
 
+  blobs_matching = matching_blobs(old, storage_client)
   destination_bucket = matching_bucket(new, storage_client)
 
-  _, new_blob_name = parse_path(new)
-  return destination_bucket.rename_blob(blobs_matching[0], new_blob_name)
+  new_blob = matching_blobs(new, storage_client)
+  if new_blob:
+    raise ValueError(
+      'Error: Cannot move object. A destination '
+      'object already exist with the same name.')
+
+  new_dir = matching_directory(
+    add_directory_slash(re.sub(r'^%s' % old, new, new)), storage_client)
+  if new_dir:
+    raise ValueError(
+      'Error: Cannot move object. The destination '
+      'directory already exist with the same name. (%s)' % new)
+
+  # Fallback to moving directory if single blob is not found
+  if not blobs_matching:
+    blobs_matching = matching_directory_contents(
+      add_directory_slash(old), storage_client)
+
+    _, blob_path_old = parse_path(old)
+    _, blob_path_new = parse_path(new)
+    for b in blobs_matching:
+      new_blob_name = re.sub(r'^%s' % blob_path_old, blob_path_new,  b.name)
+      destination_bucket.rename_blob(b, new_blob_name)
+
+    return matching_directory(add_directory_slash(new), storage_client)[0]
+  else: # Move single blob
+
+    _, new_blob_name = parse_path(new)
+    return destination_bucket.rename_blob(blobs_matching[0], new_blob_name)
 
 
 def create_storage_client():
@@ -501,13 +554,18 @@ class MoveHandler(APIHandler):
       blob = move(move_obj['oldLocalPath'], move_obj['newLocalPath'], self.storage_client)
       self.finish({
                   'type': 'file',
-                  'path': blob.path,
+                  'path': ('%s/%s' % (blob.bucket.name, blob.name)),
                   'name': blob.name
                 })
 
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
 
 
 class CopyHandler(APIHandler):
@@ -527,7 +585,7 @@ class CopyHandler(APIHandler):
         copy_obj['localPath'], copy_obj['toLocalDir'], self.storage_client)
       self.finish({
                   'type': 'file',
-                  'path': blob.path,
+                  'path': ('%s/%s' % (blob.bucket.name, blob.name)),
                   'name': blob.name
                 })
 

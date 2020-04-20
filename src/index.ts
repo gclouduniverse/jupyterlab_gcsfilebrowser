@@ -302,7 +302,7 @@ function addCommands(
   });
   app.contextMenu.addItem({
     command: CommandIDs.cut,
-    selector: selectorNotDir,
+    selector: selectorItem,
     rank: 2
   });
   app.contextMenu.addItem({
@@ -327,12 +327,12 @@ function addCommands(
   });
   app.contextMenu.addItem({
     command: CommandIDs.rename,
-    selector: selectorNotDir,
+    selector: selectorItem,
     rank: 7
   });
   app.contextMenu.addItem({
     command: CommandIDs.del,
-    selector: selectorNotDir,
+    selector: selectorItem,
     rank: 8
   });
   app.contextMenu.addItem({
