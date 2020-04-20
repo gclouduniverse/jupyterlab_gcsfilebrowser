@@ -497,6 +497,11 @@ class GCSHandler(APIHandler):
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
 
 
 class UploadHandler(APIHandler):
@@ -518,6 +523,11 @@ class UploadHandler(APIHandler):
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
 
 
 class DeleteHandler(APIHandler):
@@ -536,6 +546,11 @@ class DeleteHandler(APIHandler):
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
 
 
 class MoveHandler(APIHandler):
@@ -592,6 +607,11 @@ class CopyHandler(APIHandler):
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
 
 
 class NewHandler(APIHandler):
@@ -618,3 +638,8 @@ class NewHandler(APIHandler):
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })

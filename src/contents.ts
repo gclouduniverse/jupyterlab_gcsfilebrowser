@@ -78,9 +78,8 @@ export class GCSDrive implements Contents.IDrive {
           if (content.error) {
             console.error(content.error);
             reject(content.error);
-            return [Private.placeholderDirectory];
+            return;
           }
-
           if (content.type == 'directory') {
             let directory_contents = content.content.map((c: any) => {
               return {
@@ -125,8 +124,6 @@ export class GCSDrive implements Contents.IDrive {
               mimetype: content.content.mimetype
             });
           }
-
-
         });
       });
     });
@@ -167,7 +164,7 @@ export class GCSDrive implements Contents.IDrive {
           if (content.error) {
             console.error(content.error);
             reject(content.error);
-            return [Private.placeholderDirectory];
+            return;
           }
           if (content.type == 'directory') {
             let directory_contents = content.content.map((c: any) => {
@@ -235,8 +232,16 @@ export class GCSDrive implements Contents.IDrive {
         method: "DELETE",
       };
       ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
-      ).then((response) => {})
-      resolve(void 0);
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return;
+          }
+          resolve(void 0);
+        });
+      })
     });
   }
 
@@ -310,23 +315,30 @@ export class GCSDrive implements Contents.IDrive {
       };
       ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
       ).then((response) => {
-        const data = {
-          type: options.type,
-          path: options.path,
-          name: "",
-          format: options.format,
-          content: options.content,
-          created: options.created,
-          writable: true,
-          last_modified: options.last_modified,
-          mimetype: options.mimetype
-        };
-        this._fileChanged.emit({
-          type: 'save',
-          newValue: null,
-          oldValue: data,
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return;
+          }
+          const data = {
+            type: options.type,
+            path: options.path,
+            name: "",
+            format: options.format,
+            content: options.content,
+            created: options.created,
+            writable: true,
+            last_modified: options.last_modified,
+            mimetype: options.mimetype
+          };
+          this._fileChanged.emit({
+            type: 'save',
+            newValue: null,
+            oldValue: data,
+          });
+          resolve(data);
         });
-        resolve(data);
       });
     });
   }
@@ -361,7 +373,7 @@ export class GCSDrive implements Contents.IDrive {
           if (content.error) {
             console.error(content.error);
             reject(content.error);
-            return [Private.placeholderDirectory];
+            return;
           }
           resolve({
             type: "file",
@@ -444,30 +456,4 @@ export class GCSDrive implements Contents.IDrive {
     //this.checkPoints.get(localPath).delete(checkpointID);
     return Promise.resolve();
   }
-}
-
-/**
- * Private namespace for utility functions.
- */
-namespace Private {
-
-  /**
-   * Placeholder directory to present when there is not anything to show like
-   * after an error.
-   */
-  export const placeholderDirectory: Contents.IModel = {
-    type: 'directory',
-    path: 'abc',
-    name: 'abc',
-    format: 'json',
-    content: [{
-      'name': 'dummy' + '/',
-      'path': 'dummy' + '/',
-      'type': 'directory'
-    }],
-    created: '',
-    writable: false,
-    last_modified: '',
-    mimetype: ''
-  };
 }
