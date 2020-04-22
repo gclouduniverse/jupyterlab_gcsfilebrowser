@@ -228,10 +228,15 @@ def delete(path, storage_client):
     if len(blobs_matching) == 1: # Single blob
       blob = blobs_matching[0]
       blob.delete()
+    elif not blobs_matching:
+      # Fallback to moving directory if single blob is not found
+      blobs_matching = matching_directory_contents(
+        os.path.join(path, ''), storage_client)
 
-      return {}
-    else: # Directory
-      return {}
+      for b in blobs_matching:
+        b.delete()
+
+    return {}
 
 
 def upload(model, storage_client):
