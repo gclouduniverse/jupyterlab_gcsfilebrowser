@@ -6,6 +6,7 @@ import json
 import re
 import tornado.gen as gen
 import os
+import datetime
 
 from collections import namedtuple
 from notebook.base.handlers import APIHandler, app_log
@@ -19,6 +20,9 @@ TEMPLATE_COPY_FILE = '-Copy%s'
 TEMPLATE_NEW_FILE = '%s'
 NEW_FILE_NAME = 'Untitled'
 NEW_DIRECTORY_NAME = 'Untitled Folder'
+CHECKPOINT_FOLDER = '.ipynb_checkpoints'
+CHECKPOINT_ID = '-checkpoint'
+
 
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
@@ -159,6 +163,7 @@ def matching_directory_contents(path, storage_client):
 
   return blobs
 
+
 def matching_bucket(path, storage_client):
   bucket_name, _ = parse_path(path)
 
@@ -282,7 +287,10 @@ def upload(model, storage_client):
         '%s.temporary' % (blob_path))
 
   bucket = storage_client.get_bucket(bucket_name)
-  return bucket.blob(blob_path)
+  blob = bucket.blob(blob_path)
+  blob.update()
+  return blob
+
 
 def generate_next_unique_name(
   bucket_name,
@@ -409,6 +417,7 @@ def create_storage_client():
       )
     )
 
+
 def new_file(file_type, ext, path, storage_client):
   model = dict()
   content = ''
@@ -480,6 +489,84 @@ def new_file(file_type, ext, path, storage_client):
       'name': blob.name,
       'content': []
     }
+
+
+def checkpoint_prefix(path):
+  checkpoint_dir = os.path.join(os.path.dirname(path), CHECKPOINT_FOLDER)
+
+  return os.path.join(
+    os.path.dirname(path),
+    CHECKPOINT_FOLDER,
+    os.path.basename(path)
+    )
+
+
+def checkpoint_filename(path, checkpoint_id):
+  checkpoint_dir = os.path.join(os.path.dirname(path), CHECKPOINT_FOLDER)
+
+  return '%s%s' % (checkpoint_prefix(path), checkpoint_id)
+
+
+def create_checkpoint(path, storage_client):
+  checkpoint_pathname = checkpoint_filename(path, CHECKPOINT_ID)
+
+  content = getPathContents(path, storage_client)
+
+  model = {
+    'format': 'base64',
+    'content': content['content']['content'],
+    'path': checkpoint_pathname,
+  }
+
+  blob = upload(model, storage_client)
+
+  return {
+          'checkpoint': {
+            'id': CHECKPOINT_ID,
+            'last_modified': blob_last_modified(blob)
+          }
+        }
+
+
+def list_checkpoints(path, storage_client):
+  bucket_name, blob_path = parse_path(checkpoint_prefix(path))
+  blobs =  prefixed_blobs(bucket_name, blob_path, storage_client)
+  return {
+            'checkpoints': [{
+              'id': CHECKPOINT_ID,
+              'last_modified': blob_last_modified(blob)
+            } for blob in blobs]
+          }
+
+
+def restore_checkpoint(path, checkpoint_id, storage_client):
+  checkpoint_pathname = checkpoint_filename(path, checkpoint_id)
+  content = getPathContents(checkpoint_pathname, storage_client)
+
+  model = {
+    'format': 'base64',
+    'content': content['content']['content'],
+    'path': path,
+  }
+
+  blob = upload(model, storage_client)
+  return {
+          'checkpoint': {
+            'id': CHECKPOINT_ID,
+            'last_modified': blob_last_modified(blob)
+          }
+        }
+
+
+def delete_checkpoint(path, checkpoint_id, storage_client):
+  checkpoint_pathname = checkpoint_filename(path, checkpoint_id)
+  delete(checkpoint_pathname, storage_client)
+  return {}
+
+
+def blob_last_modified(blob):
+  return blob.updated.strftime("%Y-%m-%d %H:%M:%S %z") if blob.updated else ''
+
 
 class GCSHandler(APIHandler):
   """Handles requests for GCS operations."""
@@ -634,6 +721,50 @@ class NewHandler(APIHandler):
         self.storage_client
         )
       )
+
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
+
+
+class CheckpointHandler(APIHandler):
+
+  storage_client = None
+
+  @gen.coroutine
+  def post(self, *args, **kwargs):
+
+    checkpoint_obj = self.get_json_body()
+
+    try:
+      if not self.storage_client:
+        self.storage_client = create_storage_client()
+
+      if checkpoint_obj['action'] == 'createCheckpoint':
+        checkpoint = create_checkpoint(
+          checkpoint_obj['localPath'], self.storage_client)
+        self.finish(checkpoint)
+      if checkpoint_obj['action'] == 'listCheckpoints':
+        checkpoints = list_checkpoints(
+          checkpoint_obj['localPath'], self.storage_client)
+        self.finish(checkpoints)
+      if checkpoint_obj['action'] == 'restoreCheckpoint':
+        checkpoint = restore_checkpoint(
+          checkpoint_obj['localPath'],
+          checkpoint_obj['checkpointID'],
+           self.storage_client)
+        self.finish(checkpoint)
+      if checkpoint_obj['action'] == 'deleteCheckpoint':
+        checkpoint = delete_checkpoint(
+          checkpoint_obj['localPath'],
+          checkpoint_obj['checkpointID'],
+           self.storage_client)
+        self.finish({})
 
     except Exception as e:
       app_log.exception(str(e))

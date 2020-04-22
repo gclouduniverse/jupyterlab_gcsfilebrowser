@@ -400,19 +400,32 @@ export class GCSDrive implements Contents.IDrive {
     *   checkpoint is created.
     */
   createCheckpoint(localPath: string): Promise<Contents.ICheckpointModel> {
-    // TODO(cbwilkes): Replace dummy create checkpoint.
-    if (this.checkPoints.has(localPath) === false) {
-      this.checkPoints.set(localPath, new Map<string, Contents.ICheckpointModel>());
-    }
-    const checkPoint = {
-      id: this.checkPoints.get(localPath).size.toString(),
-      last_modified: new Date().toString()
-    }
-    this.checkPoints.get(localPath).set(checkPoint.id, checkPoint);
-    return Promise.resolve(checkPoint);
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/checkpoint');
+      const body = {
+        'action': 'createCheckpoint',
+        'localPath': localPath,
+      }
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return;
+          }
+          resolve(content.checkpoint);
+        })
+      });
+    });
   }
-
-  private checkPoints: Map<string, Map<string, Contents.ICheckpointModel>> = new Map<string, Map<string, Contents.ICheckpointModel>>();
 
   /**
     * List available checkpoints for a file.
@@ -423,11 +436,31 @@ export class GCSDrive implements Contents.IDrive {
     *    the file.
     */
   listCheckpoints(localPath: string): Promise<Contents.ICheckpointModel[]> {
-    // TODO(cbwilkes): Replace dummy list checkpoint.
-    if (this.checkPoints.has(localPath) === false) {
-      this.checkPoints.set(localPath, new Map<string, Contents.ICheckpointModel>());
-    }
-    return Promise.resolve(Array.from(this.checkPoints.get(localPath).values()));
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/checkpoint');
+      const body = {
+        'action': 'listCheckpoints',
+        'localPath': localPath,
+      }
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return;
+          }
+          resolve(content.checkpoints);
+        })
+      });
+    });
   }
 
   /**
@@ -440,7 +473,32 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves when the checkpoint is restored.
     */
   restoreCheckpoint(localPath: string, checkpointID: string): Promise<void> {
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/checkpoint');
+      const body = {
+        'action': 'restoreCheckpoint',
+        'localPath': localPath,
+        'checkpointID': checkpointID,
+      }
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return;
+          }
+          resolve(void 0);
+        })
+      });
+    });
   }
 
   /**
@@ -453,7 +511,31 @@ export class GCSDrive implements Contents.IDrive {
     * @returns A promise which resolves when the checkpoint is deleted.
     */
   deleteCheckpoint(localPath: string, checkpointID: string): Promise<void> {
-    //this.checkPoints.get(localPath).delete(checkpointID);
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      // TODO(cbwilkes): Move to a services library.
+      let serverSettings = ServerConnection.makeSettings();
+      const requestUrl = URLExt.join(
+        serverSettings.baseUrl, 'gcp/v1/gcs/checkpoint');
+      const body = {
+        'action': 'deleteCheckpoint',
+        'localPath': localPath,
+        'checkpointID': checkpointID,
+      }
+      const requestInit: RequestInit = {
+        body: JSON.stringify(body),
+        method: "POST",
+      };
+      ServerConnection.makeRequest(requestUrl, requestInit, serverSettings
+      ).then((response) => {
+        response.json().then((content) => {
+          if (content.error) {
+            console.error(content.error);
+            reject(content.error);
+            return;
+          }
+          resolve(void 0);
+        })
+      });
+    });
   }
 }
