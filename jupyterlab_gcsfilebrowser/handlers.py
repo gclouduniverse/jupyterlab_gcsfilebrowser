@@ -27,6 +27,7 @@ CHECKPOINT_ID = '-checkpoint'
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
   directories = set()
+  directory_last_modified = dict()
 
   path = '%s%s' % (path, '' if re.match(".*/$", path) else '/')
 
@@ -43,6 +44,8 @@ def list_dir(bucket_name, path, blobs_dir_list):
       # Add the top directory to the set of directories if one exist
       if relative_path_parts:
         directories.add(relative_path_parts[0])
+        directory_last_modified[
+          relative_path_parts[0]] = blob_last_modified(blob)
     else:
       if relative_path_parts:
         dir_name = relative_path_parts[0]
@@ -52,11 +55,14 @@ def list_dir(bucket_name, path, blobs_dir_list):
 
         if blobInDir(relative_path_parts):
           directories.add(relative_path_parts[0])
+          directory_last_modified[
+            relative_path_parts[0]] = blob_last_modified(blob)
         else:
           items.append({
                   'type': 'file',
                   'path': ('%s/%s' % (bucket_name, blob.name)),
-                  'name': dir_name
+                  'name': dir_name,
+                  'last_modified':  blob_last_modified(blob),
                 })
 
   if path != '/':
@@ -65,7 +71,8 @@ def list_dir(bucket_name, path, blobs_dir_list):
   items = items + [{
                   'type': 'directory',
                   'path': ('%s%s%s/' % (bucket_name, path, d)),
-                  'name': d + '/'
+                  'name': d + '/',
+                  'last_modified':  directory_last_modified[d],
                   } for d in directories]
 
   return items
@@ -183,7 +190,8 @@ def getPathContents(path, storage_client):
         'content': [{
                     'type': 'directory',
                     'path': b.name + '/',
-                    'name': b.name + '/'
+                    'name': b.name + '/',
+                    'last_modified':  bucket_time_created(b),
                     } for b in buckets]
     }
   else:
@@ -205,7 +213,8 @@ def getPathContents(path, storage_client):
           'type': 'file',
           'mimetype': blob.content_type,
           'content': base64.encodebytes(
-            file_bytes.getvalue()).decode('ascii')
+            file_bytes.getvalue()).decode('ascii'),
+          'last_modified':  blob_last_modified(blob),
           }
         }
     else: # Directory
@@ -571,6 +580,10 @@ def delete_checkpoint(path, checkpoint_id, storage_client):
 
 def blob_last_modified(blob):
   return blob.updated.strftime("%Y-%m-%d %H:%M:%S %z") if blob.updated else ''
+
+
+def bucket_time_created(bucket):
+  return bucket.time_created.strftime("%Y-%m-%d %H:%M:%S %z") if bucket.time_created else ''
 
 
 class GCSHandler(APIHandler):

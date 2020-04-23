@@ -1,4 +1,5 @@
 import unittest
+import datetime
 from unittest.mock import Mock, MagicMock, patch
 
 from jupyterlab_gcsfilebrowser import handlers
@@ -30,11 +31,13 @@ class TestGCSDirectory(unittest.TestCase):
           'name': 'dummy_bucket1/',
           'path': 'dummy_bucket1/',
           'type': 'directory',
+          'last_modified': '',
         },
         {
           'name': 'dummy_bucket2/',
           'path': 'dummy_bucket2/',
           'type': 'directory',
+          'last_modified': '',
         },
       ]
     }
@@ -67,11 +70,13 @@ class TestGCSDirectory(unittest.TestCase):
           'name': 'dummy_file',
           'path': 'dummy_bucket1/dummy_file',
           'type': 'file',
+          'last_modified': '',
         },
         {
           'name': 'dummy_dir/',
           'path': 'dummy_bucket1/dummy_dir/',
           'type': 'directory',
+          'last_modified': '',
         },
       ]
     }
@@ -105,11 +110,13 @@ class TestGCSDirectory(unittest.TestCase):
           'name': 'dummy_file',
           'path': 'dummy_bucket1/subdir/dummy_file',
           'type': 'file',
+          'last_modified': '',
         },
         {
           'name': 'dummy_dir/',
           'path': 'dummy_bucket1/subdir/dummy_dir/',
           'type': 'directory',
+          'last_modified': '',
         },
       ]
     }

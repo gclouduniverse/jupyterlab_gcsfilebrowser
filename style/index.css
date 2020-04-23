@@ -45,11 +45,11 @@
   background: var(--jp-layout-color2);
 }
 
-.jp-gcs-DirListing-headerItem.jp-id-name {
+.jp-gcs-DirListing-headerItem.jp-gcs-id-name {
   flex: 1 0 84px;
 }
 
-.jp-gcs-DirListing-headerItem.jp-id-modified {
+.jp-gcs-DirListing-headerItem.jp-gcs-id-modified {
   flex: 0 0 112px;
   border-left: var(--jp-border-width) solid var(--jp-border-color2);
   text-align: right;
@@ -149,21 +149,12 @@
   transform: translateX(-40%) translateY(-58%);
 }
 
-
-.jp-DirListing-headerItem.jp-id-name {
-  flex: 1 0 84px;
-}
-
-.jp-DirListing-headerItem.jp-id-modified {
-  flex: 0 0 112px;
-  border-left: var(--jp-border-width) solid var(--jp-border-color2);
-  text-align: right;
-}
-
 /*
 Hide last modified column
 */
+/*
 #gcs-filebrowser-widget .jp-gcs-DirListing-itemModified,
 #gcs-filebrowser-widget .jp-gcs-id-modified {
   display: none;
 }
+*/

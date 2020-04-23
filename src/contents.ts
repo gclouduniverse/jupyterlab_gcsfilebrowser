@@ -89,7 +89,7 @@ export class GCSDrive implements Contents.IDrive {
                 type: c.type,
                 created: "",
                 writable: true,
-                last_modified: "",
+                last_modified: c.last_modified,
                 mimetype: c.mimetype,
                 content: c.content
               };
@@ -102,7 +102,7 @@ export class GCSDrive implements Contents.IDrive {
               content: directory_contents,
               created: "",
               writable: true,
-              last_modified: "",
+              last_modified: content.last_modified,
               mimetype: ""
             }
             resolve(directory);
@@ -120,7 +120,7 @@ export class GCSDrive implements Contents.IDrive {
               content: decoded_content,
               created: "",
               writable: true,
-              last_modified: "",
+              last_modified: content.content.last_modified,
               mimetype: content.content.mimetype
             });
           }
