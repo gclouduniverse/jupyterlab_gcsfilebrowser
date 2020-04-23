@@ -229,7 +229,7 @@ def delete(path, storage_client):
       blob = blobs_matching[0]
       blob.delete()
     elif not blobs_matching:
-      # Fallback to moving directory if single blob is not found
+      # Fallback to deleting a directory if single blob is not found
       blobs_matching = matching_directory_contents(
         os.path.join(path, ''), storage_client)
 

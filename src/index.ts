@@ -9,7 +9,6 @@ import {
 
 import {IDocumentManager} from '@jupyterlab/docmanager';
 import {IGCSFileBrowserFactory} from './jupyterlab_filebrowser/tokens';
-import {DirListing} from './jupyterlab_filebrowser/listing';
 import {GCSDrive} from './contents';
 
 import {IStatusBar} from '@jupyterlab/statusbar';
@@ -53,17 +52,6 @@ async function activateGCSFileBrowser(
   const browser = factory.createFileBrowser(NAMESPACE, {
     driveName: drive.name
   });
-
-  let widgets = browser.layout.iter();
-
-  for (let item = widgets.next(); item; item = widgets.next()) {
-    console.log(item);
-    if (item instanceof DirListing) {
-      let listing = <DirListing>item;
-
-      listing.onItemOpened.connect(console.log)
-    }
-  }
 
   browser.model.addGCSDrive(drive);
   browser.addClass('jp-GCSFilebrowser');
