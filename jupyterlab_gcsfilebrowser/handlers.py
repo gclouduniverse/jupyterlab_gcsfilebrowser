@@ -375,6 +375,10 @@ def copy(path, directory, storage_client):
 
     return destination_bucket, new_blob_name
 
+  if directory in ('/', ''):
+    raise ValueError('Error: Cannot copy file to the root directory. '
+                     'Only GCS buckets can be created here.')
+
   blobs_matching = matching_blobs(path, storage_client)
   if not blobs_matching:
     raise ValueError('Error: Blob not found "%s"' % (path))
@@ -395,6 +399,11 @@ def move(old, new, storage_client):
   def add_directory_slash(path):
     return '%s/' % path if not path or path[-1] != '/' else path
 
+  _, blob_path_new = parse_path(new)
+  if not blob_path_new:
+    raise ValueError('Error: Cannot copy file to the root directory. '
+                     'Only GCS buckets can be created here.')
+
   blobs_matching = matching_blobs(old, storage_client)
   destination_bucket = matching_bucket(new, storage_client)
 
@@ -411,22 +420,20 @@ def move(old, new, storage_client):
       'Error: Cannot move object. The destination '
       'directory already exist with the same name. (%s)' % new)
 
+
   # Fallback to moving directory if single blob is not found
   if not blobs_matching:
     blobs_matching = matching_directory_contents(
       add_directory_slash(old), storage_client)
 
     _, blob_path_old = parse_path(old)
-    _, blob_path_new = parse_path(new)
     for b in blobs_matching:
       new_blob_name = re.sub(r'^%s' % blob_path_old, blob_path_new,  b.name)
       destination_bucket.rename_blob(b, new_blob_name)
 
     return matching_directory(add_directory_slash(new), storage_client)[0]
   else: # Move single blob
-
-    _, new_blob_name = parse_path(new)
-    return destination_bucket.rename_blob(blobs_matching[0], new_blob_name)
+    return destination_bucket.rename_blob(blobs_matching[0], blob_path_new)
 
 
 def create_storage_client():
