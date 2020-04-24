@@ -114,6 +114,7 @@ namespace CommandIDs {
   export const paste = 'gcsfilebrowser:paste';
   export const open = 'gcsfilebrowser:open';
   export const download = 'gcsfilebrowser:download';
+  export const createNewDirectory = 'gcsfilebrowser:create-new-directory';
 }
 
 
@@ -276,6 +277,18 @@ function addCommands(
     label: 'Download'
   });
 
+  commands.addCommand(CommandIDs.createNewDirectory, {
+    execute: () => {
+      const widget = tracker.currentWidget;
+
+      if (widget) {
+        return widget.createNewDirectory();
+      }
+    },
+    iconClass: 'jp-MaterialIcon jp-NewFolderIcon',
+    label: 'New Folder'
+  });
+
   // matches anywhere on filebrowser
   const selectorContent = '.jp-gcs-DirListing-content';
   // matches all filebrowser items
@@ -304,29 +317,34 @@ function addCommands(
     rank: 4
   });
   app.contextMenu.addItem({
-    command: CommandIDs.paste,
+    command: CommandIDs.createNewDirectory,
     selector: selectorContent,
     rank: 5
   });
   app.contextMenu.addItem({
+    command: CommandIDs.paste,
+    selector: selectorContent,
+    rank: 6
+  });
+  app.contextMenu.addItem({
     command: CommandIDs.copyGCSURI,
     selector: selectorNotDir,
-    rank: 6
+    rank: 7
   });
   app.contextMenu.addItem({
     command: CommandIDs.rename,
     selector: selectorItem,
-    rank: 7
+    rank: 8
   });
   app.contextMenu.addItem({
     command: CommandIDs.del,
     selector: selectorItem,
-    rank: 8
+    rank: 9
   });
   app.contextMenu.addItem({
     command: CommandIDs.download,
     selector: selectorNotDir,
-    rank: 9
+    rank: 10
   });
 
 }

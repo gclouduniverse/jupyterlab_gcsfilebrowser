@@ -301,9 +301,7 @@ def upload(model, storage_client):
         '%s.temporary' % (blob_path))
 
   bucket = storage_client.get_bucket(bucket_name)
-  blob = bucket.blob(blob_path)
-  blob.update()
-  return blob
+  return bucket.blob(blob_path)
 
 
 def generate_next_unique_name(
@@ -369,11 +367,18 @@ def copy(path, directory, storage_client):
 
     if not basename:
       raise ValueError('"path" is not a valid blob name.')
-    new_blob_name = '%s/%s' % (destination_blob_name_dir, basename)
+
+    if destination_blob_name_dir:
+      new_blob_name = '%s/%s' % (destination_blob_name_dir, basename)
+    else:
+      new_blob_name = '%s' % (basename)
 
     return destination_bucket, new_blob_name
 
   blobs_matching = matching_blobs(path, storage_client)
+  if not blobs_matching:
+    raise ValueError('Error: Blob not found "%s"' % (path))
+
   current_bucket = matching_bucket(path, storage_client)
   destination_bucket_name, new_blob_name = copyFileName(path, directory)
 
