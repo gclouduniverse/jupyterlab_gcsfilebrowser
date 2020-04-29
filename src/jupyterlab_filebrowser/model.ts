@@ -394,6 +394,7 @@ export class GCSFileBrowserModel implements IDisposable {
     let element = document.createElement('a');
     element.href = url;
     element.download = '';
+    element.target = '_blank';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
