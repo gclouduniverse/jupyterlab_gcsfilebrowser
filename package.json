@@ -33,6 +33,8 @@
     "lint": "npm run lint-warnings -- --quiet",
     "start": "concurrently -k -p \"[{name}]\" -n \"Typescript,JupyterLab\" -c \"green.bold,yellow.bold\" \"npm run watch\" \"jupyter lab --ip=0.0.0.0 --watch\"",
     "devserver": "nodemon -w jupyterlab_gcsfilebrowser -e \".py\" -x \"jupyter lab --ip=0.0.0.0 --no-browser\"",
+    "cloud_shell_devfrontend": "concurrently -k -p \"[{name}]\" -n \"Typescript,JupyterLab\" -c \"green.bold,yellow.bold\" \"npm run watch\" \"jupyter lab --ip=0.0.0.0 --port=8888 --LabApp.token='' --NotebookApp.custom_display_url='# Click to access: http://127.0.0.1:8888 #' --watch\"",
+    "cloud_shell_devbackend": "nodemon -w jupyterlab_gcsfilebrowser -e \".py\" -x \"jupyter lab --ip=0.0.0.0 --port=8888 --LabApp.token='' --NotebookApp.custom_display_url='# Click to access: http://127.0.0.1:8888 #' --no-browser\"",
     "test": "jest --coverage --passWithNoTests && python tests.py",
     "test-watch": "jest --watch",
     "watch": "tsc -w"
