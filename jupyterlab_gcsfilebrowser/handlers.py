@@ -7,6 +7,8 @@ import re
 import tornado.gen as gen
 import os
 import datetime
+import notebook
+import nbformat
 
 from collections import namedtuple
 from notebook.base.handlers import APIHandler, app_log
@@ -598,6 +600,7 @@ def bucket_time_created(bucket):
   return bucket.time_created.strftime("%Y-%m-%d %H:%M:%S %z") if bucket.time_created else ''
 
 
+
 class GCSHandler(APIHandler):
   """Handles requests for GCS operations."""
   storage_client = None
@@ -796,6 +799,46 @@ class CheckpointHandler(APIHandler):
            self.storage_client)
         self.finish({})
 
+    except Exception as e:
+      app_log.exception(str(e))
+      self.set_status(500, str(e))
+      self.finish({
+        'error':{
+          'message': str(e)
+          }
+        })
+
+
+class GCSNbConvert(APIHandler):
+  """Handles requests for nbconvert for files in GCS."""
+  storage_client = None
+
+  @gen.coroutine
+  def get(self, *args, **kwargs):
+
+    try:
+      if not self.storage_client:
+        self.storage_client = create_storage_client()
+
+      nb = getPathContents(args[1], self.storage_client)
+
+      gcs_notebook = nbformat.reads(
+        base64.b64decode(nb['content']['content'] ).decode('utf-8'),
+        as_version=4)
+
+      exporter = notebook.nbconvert.handlers.get_exporter(args[0])
+
+      (output, resources) = exporter.from_notebook_node(gcs_notebook)
+      # Force download if requested
+      if self.get_argument('download', 'false').lower() == 'true':
+          filename = os.path.splitext(args[1])[0] + resources['output_extension']
+          self.set_header('Content-Disposition',
+                              'attachment; filename="%s"' % filename)
+      if exporter.output_mimetype:
+            self.set_header('Content-Type',
+                            '%s; charset=utf-8' % exporter.output_mimetype)
+
+      self.finish(output)
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
