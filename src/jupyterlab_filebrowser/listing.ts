@@ -1371,6 +1371,14 @@ export class DirListing extends Widget {
     );
   }
 
+  private isValidFileName(newName: string) {
+    var chars = new RegExp('[?+%]');
+    if (chars.test(newName)) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Allow the user to rename item on a given row.
    */
@@ -1392,13 +1400,13 @@ export class DirListing extends Widget {
         this._inRename = false;
         return original;
       }
-      if (!isValidFileName(newName)) {
+      if (!isValidFileName(newName) || !this.isValidFileName(newName)) {
         void showErrorMessage(
           'Rename Error',
           Error(
             `"${newName}" is not a valid name for a file. ` +
             `Names must have nonzero length, ` +
-            `and cannot include "/", "\\", or ":"`
+            `and cannot include "/", "\\", "+", "?", "%", or ":"`
           )
         );
         this._inRename = false;
