@@ -277,16 +277,55 @@ export class GCSDrive implements Contents.IDrive {
             reject(content.error);
             return;
           }
-          resolve({
-            type: "file",
-            path: content.path,
-            name: content.path,
-            format: "text",
-            content: null,
-            created: "",
-            writable: true,
-            last_modified: "",
-            mimetype: null
+          let data: Contents.IModel;
+          if (content.type == 'directory') {
+            let directory_contents = content.content.map((c: any) => {
+              return {
+                name: c.name,
+                path: c.path,
+                format: "json",
+                type: c.type,
+                created: "",
+                writable: true,
+                last_modified: "",
+                mimetype: c.mimetype,
+                content: c.content
+              };
+            })
+            data = {
+              type: "directory",
+              path: content.path,
+              name: content.name,
+              format: "json",
+              content: directory_contents,
+              created: "",
+              writable: true,
+              last_modified: "",
+              mimetype: ""
+            }
+          }
+          else if (content.type == "file") {
+            let decoded_content = Buffer.from(
+              content.content.content.replace(/\n/g, ""),
+              'base64').toString('utf8')
+
+            data = {
+              type: "file",
+              path: content.content.path,
+              name: content.content.name,
+              format: "text",
+              content: decoded_content,
+              created: "",
+              writable: true,
+              last_modified: "",
+              mimetype: content.content.mimetype
+            }
+          }
+          resolve(data);
+          this._fileChanged.emit({
+            type: 'rename',
+            oldValue: {path: oldLocalPath},
+            newValue: data
           });
         })
       });

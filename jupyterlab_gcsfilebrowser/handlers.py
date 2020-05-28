@@ -687,11 +687,22 @@ class MoveHandler(APIHandler):
         self.storage_client = create_storage_client()
 
       blob = move(move_obj['oldLocalPath'], move_obj['newLocalPath'], self.storage_client)
+
+      file_bytes = BytesIO()
+      blob.download_to_file(file_bytes)
+
       self.finish({
                   'type': 'file',
-                  'path': ('%s/%s' % (blob.bucket.name, blob.name)),
-                  'name': blob.name
-                })
+                  'content': {
+                    'path': ('%s/%s' % (blob.bucket.name, blob.name)),
+                    'name': blob.name,
+                    'mimetype': blob.content_type,
+                    'content': base64.encodebytes(
+                      file_bytes.getvalue()).decode('ascii'),
+                    'last_modified':  blob_last_modified(blob),
+                    },
+                  })
+
 
     except Exception as e:
       app_log.exception(str(e))

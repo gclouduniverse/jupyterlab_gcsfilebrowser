@@ -13,6 +13,8 @@ import {GCSDrive} from './contents';
 
 import {IStatusBar} from '@jupyterlab/statusbar';
 
+import {IFileBrowserFactory} from "@jupyterlab/filebrowser";
+
 import {
   Clipboard,
   MainAreaWidget,
@@ -36,13 +38,50 @@ import {FileUploadStatus} from './jupyterlab_filebrowser/uploadstatus';
 import {IIconRegistry} from '@jupyterlab/ui-components';
 
 import {map, toArray} from '@phosphor/algorithm';
+import {Widget, PanelLayout} from '@phosphor/widgets';
+import {h, VirtualDOM} from "@phosphor/virtualdom";
+import {stylesheet} from 'typestyle';
 
 const NAMESPACE = 'gcsfilebrowser';
 const GCS_URI_PREFIX = 'gs://';
 
+const localStyles = stylesheet({
+  header: {
+    borderBottom: 'var(--jp-border-width) solid var(--jp-border-color2)',
+    fontWeight: 600,
+    fontSize: 'var(--jp-ui-font-size0, 11px)',
+    letterSpacing: '1px',
+    margin: 0,
+    padding: '8px 12px',
+    textTransform: 'uppercase',
+    backgroundColor: 'white',
+  },
+});
+
+class GCSBrowserWidget extends Widget {
+  constructor(browser: GCSFileBrowser) {
+    super();
+    this.addClass("jp-GCSBrowser");
+    this.layout = new PanelLayout();
+    const header = new Widget({
+      node: VirtualDOM.realize(
+        h.div(
+          {className: localStyles.header},
+          "Google Cloud Storage"
+        )
+      ),
+    });
+
+    (this.layout as PanelLayout).addWidget(header);
+    (this.layout as PanelLayout).addWidget(browser);
+  }
+}
+
+
 async function activateGCSFileBrowser(
   app: JupyterFrontEnd,
   manager: IDocumentManager,
+  factory_browser: IFileBrowserFactory,
   factory: IGCSFileBrowserFactory,
   restorer: ILayoutRestorer
 ) {
@@ -53,15 +92,20 @@ async function activateGCSFileBrowser(
     driveName: drive.name
   });
 
+  factory_browser.createFileBrowser(NAMESPACE, {
+    driveName: drive.name
+  });
+
   browser.model.addGCSDrive(drive);
-  browser.addClass('jp-GCSFilebrowser');
+  const mybrowser = new GCSBrowserWidget(browser)
+  mybrowser.addClass('jp-GCSFilebrowser');
 
-  browser.title.iconClass = 'jp-GCSFilebrowserIcon jp-SideBar-tabIcon';
-  browser.title.caption = 'Browse GCS';
-  browser.id = 'gcs-filebrowser-widget';
+  mybrowser.title.iconClass = 'jp-GCSFilebrowserIcon jp-SideBar-tabIcon';
+  mybrowser.title.caption = 'Browse GCS';
+  mybrowser.id = 'gcs-filebrowser-widget';
 
-  restorer.add(browser, NAMESPACE);
-  app.shell.add(browser, 'left', {rank: 100});
+  restorer.add(mybrowser, NAMESPACE);
+  app.shell.add(mybrowser, 'left', {rank: 100});
 
   addCommands(app, factory);
 }
@@ -356,6 +400,7 @@ const GCSFileBrowserPlugin: JupyterFrontEndPlugin<void> = {
   id: 'gcsfilebrowser:drive',
   requires: [
     IDocumentManager,
+    IFileBrowserFactory,
     IGCSFileBrowserFactory,
     ILayoutRestorer
   ],
