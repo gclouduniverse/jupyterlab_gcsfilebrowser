@@ -148,6 +148,11 @@ export class GCSDrive implements Contents.IDrive {
     *    file is created.
     */
   newUntitled(options?: Contents.ICreateOptions): Promise<Contents.IModel> {
+    if (options.path === '/' || options.path === "") {
+      return Promise.reject(
+        "Cannot create new files in the root directory. " +
+        "Only GCS buckets can be created here.")
+    }
     return new Promise((resolve, reject) => {
       // TODO(cbwilkes): Move to a services library.
       let serverSettings = ServerConnection.makeSettings();
