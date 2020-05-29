@@ -25,6 +25,15 @@ NEW_DIRECTORY_NAME = 'Untitled Folder'
 CHECKPOINT_FOLDER = '.ipynb_checkpoints'
 CHECKPOINT_ID = '-checkpoint'
 
+class Error(Exception):
+  """GCS Filebrowser exception."""
+  pass
+
+
+class FileNotFound(Error):
+  """File not found exception."""
+  pass
+
 
 def list_dir(bucket_name, path, blobs_dir_list):
   items = []
@@ -219,11 +228,15 @@ def getPathContents(path, storage_client):
           'last_modified':  blob_last_modified(blob),
           }
         }
-    else: # Directory
-      return {
-        'type': 'directory',
-        'content': list_dir(bucket_name, blob_path, blobs_prefixed)
-        }
+    else:
+      contents = list_dir(bucket_name, blob_path, blobs_prefixed)
+      if contents: # Directory
+        return {
+          'type': 'directory',
+          'content': contents
+          }
+      else:
+        raise FileNotFound('File "%s" not found' % path)
 
 
 def delete(path, storage_client):
@@ -614,6 +627,17 @@ class GCSHandler(APIHandler):
       self.finish(json.dumps(
         getPathContents(path, self.storage_client)))
 
+    except FileNotFound as e:
+      app_log.exception(str(e))
+      self.set_status(404, str(e))
+      self.finish({
+        'error':{
+          'message': str(e),
+          'response': {
+            'status': 404,
+            },
+          }
+        })
     except Exception as e:
       app_log.exception(str(e))
       self.set_status(500, str(e))
