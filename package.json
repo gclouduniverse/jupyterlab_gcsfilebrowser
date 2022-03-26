@@ -58,7 +58,7 @@
     "typestyle": "^2.0.4",
     "yaml": "^1.7.2",
     "acorn": ">=7.1.1",
-    "minimist": ">=1.2.2"
+    "minimist": ">=1.2.6"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
